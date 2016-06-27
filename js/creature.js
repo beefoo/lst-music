@@ -6,6 +6,7 @@ var Creature = (function() {
   }
 
   Creature.prototype.init = function(){
+    this.ctx = this.opt.ctx;
     this.points = [];
   };
 
@@ -45,7 +46,8 @@ var Creature = (function() {
     this.points = validPoints;
   };
 
-  Creature.prototype.render = function(ctx){
+  Creature.prototype.render = function(){
+    var ctx = this.ctx;
     var color = this.opt.strokeColor.join(',');
     var width = this.opt.strokeWidth;
     var half = width / 2;

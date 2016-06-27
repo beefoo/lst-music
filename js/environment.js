@@ -7,10 +7,11 @@ var Environment = (function() {
 
   Environment.prototype.init = function(){
     this.animating = false;
-    this.userCreature = new Creature(this.opt.creature);
-    
     this.loadCanvas();
+    this.loadCreatures();
+    this.loadChord();
     this.loadListeners();
+    this.render();
   };
 
   Environment.prototype.clearCanvas = function(ctx){
@@ -34,7 +35,17 @@ var Environment = (function() {
     this.canvasOffset = this.$canvas.offset();
     this.ctx = this.canvas.getContext('2d');
 
-    this.resizeCanvas();
+    this.resize();
+  };
+
+  Environment.prototype.loadChord = function(){
+    var chordOpt = _.extend({ctx: this.ctx}, this.opt.chord);
+    this.chord = new Chord(chordOpt);
+  };
+
+  Environment.prototype.loadCreatures = function(){
+    var creatureOpt = _.extend({}, this.opt.creature, {ctx: this.ctx})
+    this.userCreature = new Creature(creatureOpt);
   };
 
   Environment.prototype.loadListeners = function(){
@@ -63,7 +74,7 @@ var Environment = (function() {
       _this.onStrokeEnd();
     });
 
-    $(window).on("resize", function(){ _this.resizeCanvas(); })
+    $(window).on("resize", function(){ _this.resize(); })
   };
 
   Environment.prototype.onStrokeEnd = function(){
@@ -73,11 +84,15 @@ var Environment = (function() {
   };
 
   Environment.prototype.render = function(){
+    // Render user creature
     this.userCreature.lerpPoints();
-    this.userCreature.render(this.ctx);
+    this.userCreature.render();
+
+    // render chord
+    this.chord.render();
 
     // only render if there's something to animate
-    if (this.userCreature.isActive()) {
+    if (this.userCreature.isActive() || this.chord.isActive()) {
       requestAnimationFrame(this.render.bind(this));
 
     // pause animation
@@ -86,9 +101,13 @@ var Environment = (function() {
     }
   };
 
-  Environment.prototype.resizeCanvas = function(){
-    this.canvas.width = this.$canvasWrapper.width();
-    this.canvas.height = this.$canvasWrapper.height();
+  Environment.prototype.resize = function(){
+    this.canvasWidth = this.$canvasWrapper.width();
+    this.canvasHeight = this.$canvasWrapper.height();
+    this.canvas.width = this.canvasWidth;
+    this.canvas.height = this.canvasHeight;
+
+    this.chord && this.chord.resize();
   };
 
   return Environment;

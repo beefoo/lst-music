@@ -21,10 +21,10 @@ var Environment = (function() {
   Environment.prototype.getGestureData = function(e, time){
     var now = time || new Date();
     var offset = this.canvasOffset;
-    var x = e.gesture.center.x - offset.left;
-    var y = e.gesture.center.y - offset.top;
-    var a = e.gesture.angle;
-    var v = e.gesture.velocity;
+    var x = e.center.x - offset.left;
+    var y = e.center.y - offset.top;
+    var a = e.angle;
+    var v = e.velocity;
     return {x: x, y: y, z: 1, a: a, v: v, t: now};
   };
 
@@ -51,8 +51,13 @@ var Environment = (function() {
   Environment.prototype.loadListeners = function(){
     var _this = this;
     var ms = this.opt.strokeMs;
+    var h = new Hammer(this.$canvas[0]);
 
-    this.$canvas.hammer().on("panstart", function(e){
+    // let the pan gesture support all directions.
+    h.get('pan').set({ direction: Hammer.DIRECTION_ALL });
+
+    // pan starts
+    h.on("panstart", function(e){
       _this.clearCanvas(_this.ctx);
       var d = _this.getGestureData(e);
       _this.userCreature.setPoints([d]);
@@ -61,19 +66,23 @@ var Environment = (function() {
       }
     });
 
-    this.$canvas.hammer().on("panmove", function(e){
+    // pan moves
+    h.on("panmove", function(e){
       // remove points that are expired
       var now = new Date();
       _this.userCreature.forgetPoints(now);
       // add current point
       var d = _this.getGestureData(e, now);
       _this.userCreature.addPoint(d);
+      _this.chord.listenForPluck([_this.userCreature.getPoints()]);
     });
 
-    this.$canvas.hammer().on("panend", function(e){
+    // pan ends
+    h.on("panend", function(e){
       _this.onStrokeEnd();
     });
 
+    // window is resized
     $(window).on("resize", function(){ _this.resize(); })
   };
 

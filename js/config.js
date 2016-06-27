@@ -2,7 +2,8 @@ var CONFIG = {
 
   debug: true,
 
-  canvas: {
+  creature: {
+    strokeColor: [255, 255, 255],
     strokeWidth: 20,
     strokeMs: 1000
   }

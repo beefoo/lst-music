@@ -79,6 +79,9 @@ var Cord = (function() {
     // oscillate
     this.isOscillating = true;
     this.oscTimeStart = new Date();
+
+    // play note
+    $.publish('note.play', [this.opt.note, this.power]);
   };
 
   Cord.prototype.refreshCoordinates = function(){

@@ -1,28 +1,21 @@
 var Cord = (function() {
   function Cord(options) {
-    var defaults = {
-      len: 0.8,
-      pitch: 0.5
-    };
+    var defaults = {};
     this.opt = _.extend({}, defaults, options);
     this.init();
   }
 
   Cord.prototype.init = function(){
     this.ctx = this.opt.ctx;
-    this.len = this.opt.len;
 
     // initialize vars for cord oscillation
     this.amp = 0;
-    this.isOscillating = false;
-    this.freq = UTIL.lerp(this.opt.oscRange[0], this.opt.oscRange[1], this.opt.pitch);
-    this.tensity = UTIL.lerp(this.opt.tensityRange[0], this.opt.tensityRange[1], this.opt.pitch);
     this.maxAmp = 0;
     this.power = 0;
+    this.isOscillating = false;
+    this.yc = 0;
 
-    // console.log(this.freq, this.tensity);
-
-    this.refreshCoordinates();
+    this.onUpdate();
   };
 
   Cord.prototype.getLine = function(){
@@ -31,6 +24,15 @@ var Cord = (function() {
 
   Cord.prototype.isActive = function(){
     return this.isOscillating;
+  };
+
+  Cord.prototype.onUpdate = function(){
+    this.note = NOTES[this.opt.note];
+    this.len = this.note.len;
+    this.pitch = this.note.pitch;
+    this.freq = UTIL.lerp(this.opt.oscRange[0], this.opt.oscRange[1], this.pitch);
+    this.tensity = UTIL.lerp(this.opt.tensityRange[0], this.opt.tensityRange[1], this.pitch);
+    this.refreshCoordinates();
   };
 
   Cord.prototype.oscillate = function(){
@@ -95,7 +97,6 @@ var Cord = (function() {
     this.dx = this.x1-this.x0;
     this.xMid = this.x0 + this.dx*0.5;
     this.xc = this.xMid;
-    this.yc = 0;
   };
 
   Cord.prototype.render = function(){
@@ -126,10 +127,6 @@ var Cord = (function() {
       this.y1 + yc,
       this.x1, this.y1
     );
-    // console.log(this.x0, this.y0,
-    //   this.xMid - dxBez0, this.yMid - dyBez0,
-    //   this.xMid + dxBez1, this.yMid - dyBez1,
-    //   this.x1, this.y1);
     // close path
     ctx.stroke();
     ctx.closePath();
@@ -137,6 +134,11 @@ var Cord = (function() {
 
   Cord.prototype.resize = function(){
     this.refreshCoordinates();
+  };
+
+  Cord.prototype.update = function(options){
+    _.extend(this.opt, options);
+    this.onUpdate();
   };
 
   return Cord;

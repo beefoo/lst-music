@@ -1,23 +1,14 @@
 var Chord = (function() {
   function Chord(options) {
     var defaults = {
-      count: 5
+      key: 'c'
     };
     this.opt = _.extend({}, defaults, options);
     this.init();
   }
 
   Chord.prototype.init = function(){
-    var _this = this;
-    var cordOpt = _.extend({ctx: this.opt.ctx, count: this.opt.count}, this.opt.cord);
-
-    this.cords = [];
-
-    _(this.opt.count).times(function(i){
-      cordOpt.index = i;
-      var cord = new Cord(cordOpt);
-      _this.cords.push(cord);
-    });
+    this.setKey(this.opt.key);
   };
 
   Chord.prototype.isActive = function(){
@@ -55,6 +46,30 @@ var Chord = (function() {
   Chord.prototype.resize = function(){
     _.each(this.cords, function(c){
       c.resize();
+    });
+  };
+
+  Chord.prototype.setKey = function(key){
+    var _this = this;
+    var cordOpt = _.extend({ctx: this.opt.ctx}, this.opt.cord);
+    var chord = CHORDS[key];
+    var notes = chord.notes;
+
+    cordOpt.count = notes.length;
+    this.cords = this.cords || [];
+
+    _.each(notes, function(n, i){
+      cordOpt.index = i;
+      cordOpt.note = n;
+      // new cord
+      if (i > _this.cords.length-1) {
+        var cord = new Cord(cordOpt);
+        _this.cords.push(cord);
+
+      // existing cord
+      } else {
+        _this.cords[i].update(cordOpt)
+      }
     });
   };
 

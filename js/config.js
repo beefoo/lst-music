@@ -1,9 +1,7 @@
 var CONFIG = {
-
   debug: true,
 
   chord: {
-    count: 5,
     cord: {
       height: 0.1,
       curveRatio: 0.45,
@@ -22,4 +20,23 @@ var CONFIG = {
     strokeWidth: 20,
     strokeMs: 1000
   }
+};
+
+var NOTES = {
+  'e': {'file': 'audio/E3.mp3', 'pitch': 0.35, 'len': 0.81},
+  'f': {'file': 'audio/F3.mp3', 'pitch': 0.4, 'len': 0.79},
+  'g': {'file': 'audio/G3.mp3', 'pitch': 0.45, 'len': 0.77},
+  'a': {'file': 'audio/A3.mp3', 'pitch': 0.5, 'len': 0.75},
+  'b': {'file': 'audio/B3.mp3', 'pitch': 0.55, 'len': 0.73},
+  'c': {'file': 'audio/C3.mp3', 'pitch': 0.6, 'len': 0.71},
+  'd': {'file': 'audio/D3.mp3', 'pitch': 0.65, 'len': 0.69}
+};
+
+var CHORDS = {
+  'c':  {'notes':['c','e','g','c','e']},
+  'am': {'notes':['a','e','a','c','e']},
+  'f':  {'notes':['a','f','a','c','f']},
+  'em': {'notes':['b','e','g','b','e']},
+  'dm': {'notes':['d','a','d','f','a']},
+  'g':  {'notes':['b','d','g','b','g']}
 };

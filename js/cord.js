@@ -11,10 +11,16 @@ var Cord = (function() {
   Cord.prototype.init = function(){
     this.ctx = this.opt.ctx;
     this.len = this.opt.len;
+
+    // initialize vars for cord oscillation
     this.amp = 0;
     this.isOscillating = false;
     this.freq = UTIL.lerp(this.opt.oscRange[0], this.opt.oscRange[1], this.opt.pitch);
-    this.ampDamp = UTIL.lerp(this.opt.ampDampRange[0], this.opt.ampDampRange[1], this.opt.pitch);
+    this.tensity = UTIL.lerp(this.opt.tensityRange[0], this.opt.tensityRange[1], this.opt.pitch);
+    this.maxAmp = 0;
+    this.power = 0;
+
+    // console.log(this.freq, this.tensity);
 
     this.refreshCoordinates();
   };
@@ -36,11 +42,11 @@ var Cord = (function() {
       return false;
     }
     var t = new Date();
-    var td = (t - this.oscTimeStart) * 0.01;
+    var td = (t - this.oscTimeStart) * this.freq;
     var a = 2 * Math.PI * (td);
-    var ex = Math.exp(td * 0.2);
-    this.yc = Math.cos(a) * 10 / ex;
-    this.amp = 1 / ex;
+    var ex = Math.exp(td * this.tensity); // exponential function; gets bigger over time
+    this.amp = this.maxAmp / ex; // the current amplitude; gets smaller over time
+    this.yc = Math.cos(a) * this.amp; // the oscillating y-coordinate
   };
 
   Cord.prototype.pluck = function(point){
@@ -56,8 +62,11 @@ var Cord = (function() {
     var dc = 1 - Math.abs(xp - this.xMid) / this.dx;
 
     // distance to pull perpendicular
-    var amp = this.opt.maxDist * vp * dc;
-    if (amp > this.amp) this.amp = amp;
+    this.power = vp * dc;
+    this.maxAmp = UTIL.lerp(this.opt.ampRange[0], this.opt.ampRange[1], this.power);
+    // it's already oscillating at a greater amplitude
+    if (this.amp > this.maxAmp) this.maxAmp = this.amp;
+    this.amp = this.maxAmp;
 
     // determine direction
     this.direction = 1;

@@ -137,6 +137,7 @@ var Cord = (function() {
 
   Cord.prototype.resize = function(){
     this.refreshCoordinates();
+    this.render();
   };
 
   Cord.prototype.update = function(options){

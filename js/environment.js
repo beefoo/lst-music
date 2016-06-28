@@ -116,6 +116,7 @@ var Environment = (function() {
     this.canvas.width = this.canvasWidth;
     this.canvas.height = this.canvasHeight;
 
+    this.clearCanvas(this.ctx);
     this.chord && this.chord.resize();
   };
 

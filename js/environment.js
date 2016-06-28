@@ -14,6 +14,19 @@ var Environment = (function() {
     this.render();
   };
 
+  Environment.prototype.chordProgression = function(){
+    var t = new Date();
+    var interval = UTIL.floorToNearest(t.getTime(), this.opt.chord.duration);
+    var progressionIndex = interval % this.chordCount();
+    var chord = C
+
+    if (this.currentProgressionIndex != progressionIndex) {
+      this.currentProgressionIndex = progressionIndex;
+      this.currentChord = this.progression[progressionIndex];
+      this.chord.setKey(this.currentChord);
+    }
+  };
+
   Environment.prototype.clearCanvas = function(ctx){
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   };
@@ -39,7 +52,12 @@ var Environment = (function() {
   };
 
   Environment.prototype.loadChord = function(){
-    var chordOpt = _.extend({ctx: this.ctx}, this.opt.chord);
+    this.progression = _.keys(CHORDS);
+    this.chordCount = this.progression.length;
+    this.currentProgressionIndex = 0;
+    this.currentChord = this.progression[this.currentProgressionIndex];
+
+    var chordOpt = _.extend({ctx: this.ctx, key: this.currentChord}, this.opt.chord);
     this.chord = new Chord(chordOpt);
   };
 
@@ -96,6 +114,8 @@ var Environment = (function() {
     // Render user creature
     this.userCreature.lerpPoints();
     this.userCreature.render();
+
+    this.chordProgression();
 
     // render chord
     this.chord.render();

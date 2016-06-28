@@ -1,6 +1,10 @@
 (function() {
   window.UTIL = {};
 
+  UTIL.floorToNearest = function(num, nearest){
+    return nearest * Math.floor(num/nearest);
+  };
+
   // Linear interpolation
   UTIL.lerp = function(a, b, t) {
     return a + (b-a)*t;

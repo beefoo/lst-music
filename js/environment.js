@@ -41,7 +41,15 @@ var Environment = (function() {
   };
 
   Environment.prototype.isActive = function(){
-    return this.humanCreature.isActive() || this.chord.isActive();
+    // var creatures = this.creatures;
+    // var isCreaturesActive = false;
+    // for (var i=0; i < creatures.length; i++) {
+    //   if (creatures[i].isActive()) {
+    //     isCreaturesActive = true;
+    //     break;
+    //   }
+    // }
+    return this.humanCreature.isActive() || this.chord.isActive() || this.mode=='machine';
   };
 
   Environment.prototype.loadCanvas = function(){
@@ -65,7 +73,7 @@ var Environment = (function() {
 
   Environment.prototype.loadCreatures = function(){
     var _this = this;
-    var creatureOpt = _.extend({}, this.opt.creature, {ctx: this.ctx, type: 'human'});
+    var creatureOpt = _.extend({}, this.opt.creature, {ctx: this.ctx, type: 'human', maxVelocity: this.opt.maxVelocity});
 
     this.humanCreature = new Creature(creatureOpt);
     this.creatures = [];
@@ -105,7 +113,7 @@ var Environment = (function() {
       // add current point
       var d = _this.getGestureData(e, now);
       _this.humanCreature.addPoint(d);
-      _this.chord.listenForPluck([_this.humanCreature.getPoints()]);
+      _this.chord.listenForPluck([_this.humanCreature]);
     });
 
     // pan ends
@@ -140,11 +148,19 @@ var Environment = (function() {
   Environment.prototype.render = function(){
     this.clearCanvas();
 
+    // Render machine creatures
+    // if (this.mode == 'machine') {
+    //   this.chord.listenForPluck(this.creatures);
+    //   _.each(this.creatures, function(c){
+    //     if (!c.isActive()) c.generate();
+    //     c.lerpPoints();
+    //     c.render();
+    //   });
+    // }
+
     // Render human creature
     this.humanCreature.lerpPoints();
     this.humanCreature.render();
-
-    // Render machine creatures
 
     // render chord
     this.chord.render();

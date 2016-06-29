@@ -15,8 +15,9 @@ var Chord = (function() {
     return _.find(this.cords, function(c){ return c.isActive(); });
   };
 
-  Chord.prototype.listenForPluck = function(paths){
+  Chord.prototype.listenForPluck = function(creatures){
     var lines = [];
+    var paths = _.map(creatures, function(c){ return c.getPoints(); });
 
     // retrieve the last segment from each path
     _.each(paths, function(points){

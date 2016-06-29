@@ -1,6 +1,10 @@
 (function() {
   window.UTIL = {};
 
+  UTIL.dist = function(x1, y1, x2, y2) {
+    return Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+  };
+
   UTIL.floorToNearest = function(num, nearest){
     return nearest * Math.floor(num/nearest);
   };

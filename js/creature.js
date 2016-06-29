@@ -11,7 +11,7 @@ var Creature = (function() {
     this.points = [];
     this.network = false;
 
-    if (this.type=='machine') {
+    if (this.opt.type=='machine') {
       this.network = {};
     }
   };
@@ -26,6 +26,38 @@ var Creature = (function() {
     this.points = _.reject(this.points, function(p){
       return (time - p.t) > ms;
     });
+  };
+
+  Creature.prototype.generate = function(){
+    var w = this.ctx.canvas.width;
+    var h = this.ctx.canvas.height;
+    var maxV = this.opt.maxVelocity;
+    var gPoints = [];
+    var t = 0;
+    var input = [0, 0, 0, 0];
+    var gPrev = false;
+    var now = new Date();
+
+    for(var i=0; t < 10000; i++) {
+      var output = [Math.random(), Math.random(), Math.random(), Math.random()];
+      var gp = {
+        x: output[0] * w,
+        y: output[1] * h,
+        z: 0,
+        a: (output[2] - 0.5) * 360,
+        v: UTIL.lerp(0, maxV, output[3]),
+        t: new Date(now.getTime() + t)
+      };
+      if (gPrev) {
+        var d = UTIL.dist(gPrev.x, gPrev.y, gp.x, gp.y);
+        var s = (1/gp.v) * d;
+        t += s;
+      }
+      gPoints.push(gp);
+      gPrev = _.clone(gp);
+    }
+
+    this.points = gPoints;
   };
 
   Creature.prototype.getPointsNormal = function(points){
@@ -60,7 +92,7 @@ var Creature = (function() {
     _.each(points, function(p, i){
       var input = [prev.x, prev.y, prev.a, prev.v];
       var expected = [p.x, p.y, p.a, p.v];
-      var output = [_.random(1), _.random(1), _.random(1), _.random(1)];
+      var output = [Math.random(), Math.random(), Math.random(), Math.random()];
       var diff = [];
       _.each(expected, function(a, j){
         diff.push(Math.abs(a - output[j]));
@@ -69,8 +101,6 @@ var Creature = (function() {
       weights.push(weight);
       prev = points[i];
     });
-
-    console.log(weights)
 
     return weights;
   };
@@ -86,8 +116,10 @@ var Creature = (function() {
       var lerp = 1.0 - (now - p.t) / ms;
       if (lerp > 0 && lerp <= 1) {
         p.z = lerp;
-        validPoints.push(p);
+      } else {
+        p.z = 0;
       }
+      validPoints.push(p);
     });
 
     this.points = validPoints;

@@ -17,6 +17,11 @@
     else { return n; }
   };
 
+  UTIL.mean = function(arr){
+    var s = UTIL.sum(arr);
+    return s/arr.length;
+  };
+
   // Takes a value as well as an upper and lower limit, and returns a ratio 0 to 1
   UTIL.norm = function(a, a0, a1) {
     return UTIL.lim((a-a0)/(a1-a0), 0, 1);
@@ -27,13 +32,20 @@
     if (n >= 0) { return 1 } else { return -1 };
   };
 
-  // Linear interpolate between two colors, each as RGBA array.
+  UTIL.sum = function(arr){
+    var s = 0;
+    for(var i = 0; i < arr.length; i++){
+      s += arr[i];
+    }
+    return s;
+  };
+
+  // Linear interpolate between two colors, each as RGB array.
   UTIL.lerpColor = function(a, b, t) {
-    var c1 = lerp(a[0], b[0], t);
-    var c2 = lerp(a[1], b[1], t);
-    var c3 = lerp(a[2], b[2], t);
-    var c4 = lerp(a[3], b[3], t);
-    return [c1, c2, c3, c4];
+    var c1 = UTIL.lerp(a[0], b[0], t);
+    var c2 = UTIL.lerp(a[1], b[1], t);
+    var c3 = UTIL.lerp(a[2], b[2], t);
+    return [Math.round(c1), Math.round(c2), Math.round(c3)];
   };
 
   // Calculates line segment intersection

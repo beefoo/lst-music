@@ -84,7 +84,7 @@ var Cord = (function() {
     var angle = point.a;
 
     // normalize velocity
-    var vp = UTIL.norm(Math.abs(point.v), 0, this.opt.maxVelocity);
+    var vp = point.v;
 
     // dampen via distance from center
     var dc = 1 - Math.abs(xp - this.xMid) / this.dx;
@@ -166,7 +166,6 @@ var Cord = (function() {
     this.canvasWidth = this.ctx.canvas.width;
     this.canvasHeight = this.ctx.canvas.height;
     this.refreshCoordinates();
-    this.render();
   };
 
   Cord.prototype.toJSON = function(){

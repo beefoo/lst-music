@@ -6,7 +6,9 @@ var Environment = (function() {
   }
 
   Environment.prototype.init = function(){
-    this.animating = false;
+    this.active = false;
+    this.mode = 'machine';
+
     this.loadCanvas();
     this.loadCreatures();
     this.loadChord();
@@ -24,6 +26,7 @@ var Environment = (function() {
   };
 
   Environment.prototype.clearCanvas = function(ctx){
+    ctx = ctx || this.ctx;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   };
 
@@ -33,8 +36,12 @@ var Environment = (function() {
     var x = e.center.x - offset.left;
     var y = e.center.y - offset.top;
     var a = e.angle;
-    var v = e.velocity;
+    var v = UTIL.norm(Math.abs(e.velocity), 0, this.opt.maxVelocity);
     return {x: x, y: y, z: 1, a: a, v: v, t: now};
+  };
+
+  Environment.prototype.isActive = function(){
+    return this.humanCreature.isActive() || this.chord.isActive();
   };
 
   Environment.prototype.loadCanvas = function(){
@@ -43,8 +50,7 @@ var Environment = (function() {
     this.canvas = this.$canvas[0];
     this.canvasOffset = this.$canvas.offset();
     this.ctx = this.canvas.getContext('2d');
-
-    this.resize();
+    this.refreshCanvasSize();
   };
 
   Environment.prototype.loadChord = function(){
@@ -58,8 +64,18 @@ var Environment = (function() {
   };
 
   Environment.prototype.loadCreatures = function(){
-    var creatureOpt = _.extend({}, this.opt.creature, {ctx: this.ctx})
-    this.userCreature = new Creature(creatureOpt);
+    var _this = this;
+    var creatureOpt = _.extend({}, this.opt.creature, {ctx: this.ctx, type: 'human'});
+
+    this.humanCreature = new Creature(creatureOpt);
+    this.creatures = [];
+
+    _(this.opt.creatureCount).times(function(i){
+      creatureOpt.type = 'machine';
+      creatureOpt.index = i;
+      creatureOpt.strokeColor = [255, 234, 79];
+      _this.creatures.push(new Creature(creatureOpt));
+    });
   };
 
   Environment.prototype.loadListeners = function(){
@@ -72,68 +88,81 @@ var Environment = (function() {
 
     // pan starts
     h.on("panstart", function(e){
-      _this.clearCanvas(_this.ctx);
+      if (_this.mode=='teaching') return false;
+      _this.mode = 'human';
       var d = _this.getGestureData(e);
-      _this.userCreature.setPoints([d]);
-      if (!_this.animating) {
-        _this.render();
-      }
+      _this.humanCreature.setPoints([d]);
+      // invoke render if not already animating
+      if (!_this.active) _this.render();
     });
 
     // pan moves
     h.on("panmove", function(e){
+      if (_this.mode=='teaching') return false;
       // remove points that are expired
       var now = new Date();
-      _this.userCreature.forgetPoints(now);
+      _this.humanCreature.forgetPoints(now);
       // add current point
       var d = _this.getGestureData(e, now);
-      _this.userCreature.addPoint(d);
-      _this.chord.listenForPluck([_this.userCreature.getPoints()]);
+      _this.humanCreature.addPoint(d);
+      _this.chord.listenForPluck([_this.humanCreature.getPoints()]);
     });
 
     // pan ends
     h.on("panend", function(e){
+      if (_this.mode=='teaching') return false;
       _this.onStrokeEnd();
     });
 
+    // human finished teaching
+    $.subscribe('creature.teach.finished', function(e, data){
+      _this.mode = 'machine';
+    });
+
     // window is resized
-    $(window).on("resize", function(){ _this.resize(); })
+    $(window).on("resize", function(){ _this.resize(); });
   };
 
   Environment.prototype.onStrokeEnd = function(){
-    var _this = this;
-    var userPoints = this.userCreature.getPoints();
-    // publish points
-    $.publish('user.create', {points: userPoints});
-    _this.changeChord();
+    this.mode = 'teaching';
+    var creature = this.creatures[_.random(0, this.creatures.length-1)];
+    this.humanCreature.teach(creature);
+    this.changeChord();
+  };
+
+  Environment.prototype.refreshCanvasSize = function(){
+    this.canvasWidth = this.$canvasWrapper.width();
+    this.canvasHeight = this.$canvasWrapper.height();
+    this.canvas.width = this.canvasWidth;
+    this.canvas.height = this.canvasHeight;
   };
 
   Environment.prototype.render = function(){
-    // Render user creature
-    this.userCreature.lerpPoints();
-    this.userCreature.render();
+    this.clearCanvas();
+
+    // Render human creature
+    this.humanCreature.lerpPoints();
+    this.humanCreature.render();
+
+    // Render machine creatures
 
     // render chord
     this.chord.render();
 
     // only render if there's something to animate
-    if (this.userCreature.isActive() || this.chord.isActive()) {
+    if (this.isActive()) {
+      this.active = true;
       requestAnimationFrame(this.render.bind(this));
 
-    // pause animation
     } else {
-      this.animating = false;
+      this.active = false;
     }
   };
 
   Environment.prototype.resize = function(){
-    this.canvasWidth = this.$canvasWrapper.width();
-    this.canvasHeight = this.$canvasWrapper.height();
-    this.canvas.width = this.canvasWidth;
-    this.canvas.height = this.canvasHeight;
-
-    this.clearCanvas(this.ctx);
+    this.refreshCanvasSize();
     this.chord && this.chord.resize();
+    if (!this.active) this.render();
   };
 
   return Environment;

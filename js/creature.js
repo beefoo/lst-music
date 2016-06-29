@@ -7,7 +7,13 @@ var Creature = (function() {
 
   Creature.prototype.init = function(){
     this.ctx = this.opt.ctx;
+    this.isTeaching = false;
     this.points = [];
+    this.network = false;
+
+    if (this.type=='machine') {
+      this.network = {};
+    }
   };
 
   Creature.prototype.addPoint = function(p){
@@ -22,15 +28,56 @@ var Creature = (function() {
     });
   };
 
+  Creature.prototype.getPointsNormal = function(points){
+    var w = this.ctx.canvas.width;
+    var h = this.ctx.canvas.height;
+    var nPoints = [];
+    _.each(points, function(p, i){
+      var point = {
+        x: p.x / w,
+        y: p.y / h,
+        a: p.a / 360 + 0.5,
+        v: p.v
+      };
+      nPoints.push(point);
+    });
+    return nPoints;
+  };
+
   Creature.prototype.getPoints = function(){
     return this.points;
   };
 
   Creature.prototype.isActive = function(){
-    return this.points.length;
+    return this.points.length || this.isTeaching;
+  };
+
+  Creature.prototype.learn = function(points){
+    points = this.getPointsNormal(points);
+    var prev = {x: 0, y: 0, a: 0, v: 0};
+    var weights = [];
+
+    _.each(points, function(p, i){
+      var input = [prev.x, prev.y, prev.a, prev.v];
+      var expected = [p.x, p.y, p.a, p.v];
+      var output = [_.random(1), _.random(1), _.random(1), _.random(1)];
+      var diff = [];
+      _.each(expected, function(a, j){
+        diff.push(Math.abs(a - output[j]));
+      });
+      var weight = UTIL.mean(diff);
+      weights.push(weight);
+      prev = points[i];
+    });
+
+    console.log(weights)
+
+    return weights;
   };
 
   Creature.prototype.lerpPoints = function(){
+    if (this.isTeaching) return false;
+
     var now = new Date();
     var ms = this.opt.strokeMs;
 
@@ -46,31 +93,125 @@ var Creature = (function() {
     this.points = validPoints;
   };
 
+  Creature.prototype.onTeachingEnd = function(){
+    this.isTeaching = false;
+    this.points = [];
+    $.publish('creature.teach.finished', true);
+  };
+
   Creature.prototype.render = function(){
+    var now = new Date();
+
+    if (this.isTeaching && now < this.teachStart) {
+      this.renderTransitionState(now);
+
+    } else if (this.isTeaching && now > this.teachStop) {
+      this.renderTransitionState(now);
+
+    } else if (this.isTeaching) {
+      this.renderTeachingState(now);
+
+    } else {
+      this.renderNormalState();
+    }
+  };
+
+  Creature.prototype.renderNormalState = function(){
+    var _this = this;
     var ctx = this.ctx;
     var color = this.opt.strokeColor.join(',');
     var width = this.opt.strokeWidth;
-    var half = width / 2;
-    var quarter = half / 2;
-
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     _.each(this.points, function(p, i){
-      var x = p.x;
-      var y = p.y;
-      var z = p.z;
-      var radgrad = ctx.createRadialGradient(x, y, quarter*z, x, y, half*z);
-
-      radgrad.addColorStop(0, 'rgba('+color+','+z+')');
-      radgrad.addColorStop(0.5, 'rgba('+color+','+z/2+')');
-      radgrad.addColorStop(1, 'rgba('+color+',0)');
-      ctx.fillStyle = radgrad;
-      ctx.fillRect(x-half*z, y-half*z, width*z, width*z);
+      _this.renderPoint(ctx, width, p.x, p.y, p.z, color);
     });
+  };
+
+  Creature.prototype.renderPoint = function(ctx, w, x, y, z, color){
+    var half = w / 2;
+    var quarter = half / 2;
+    var radgrad = ctx.createRadialGradient(x, y, quarter*z, x, y, half*z);
+
+    radgrad.addColorStop(0, 'rgba('+color+','+z+')');
+    radgrad.addColorStop(0.5, 'rgba('+color+','+z/2+')');
+    radgrad.addColorStop(1, 'rgba('+color+',0)');
+    ctx.fillStyle = radgrad;
+    ctx.fillRect(x-half*z, y-half*z, w*z, w*z);
+  };
+
+  Creature.prototype.renderTeachingState = function(now){
+    var _this = this;
+    var ctx = this.ctx;
+    var colorRange = this.opt.strokeColorRangeTeach;
+    var width = this.opt.strokeWidth;
+
+    // determine transition progress
+    var progress = UTIL.norm(now.getTime(), this.teachStart.getTime(), this.teachStop.getTime());
+    var activeI = Math.floor(this.points.length * progress);
+
+
+    _.each(this.points, function(p, i){
+      if (i <= activeI) {
+        var color = colorRange[0];
+        var weight = _this.weights[i];
+        if (weight) color = UTIL.lerpColor(colorRange[0], colorRange[1], weight);
+        _this.points[i].color = color;
+        _this.renderPoint(ctx, width, p.x, p.y, 1, color);
+
+      } else {
+        _this.renderPoint(ctx, width, p.x, p.y, _this.opt.transitionZ, _this.opt.strokeColorTransition);
+      }
+    });
+  };
+
+  Creature.prototype.renderTransitionState = function(now){
+    var _this = this;
+    var ctx = this.ctx;
+    var colorRange = [this.opt.strokeColor, this.opt.strokeColorTransition];
+    var timeRange = [this.transitionStart.getTime(), this.teachStart.getTime()];
+    var width = this.opt.strokeWidth;
+    var startZ = false;
+    var targetZ = this.opt.transitionZ;
+    var finishedTeaching = now > this.teachStart;
+
+    if (finishedTeaching) {
+      timeRange = [this.teachStop.getTime(), this.transitionStop.getTime()];
+      targetZ = 0;
+      startZ = 1;
+    }
+
+    // determine transition progress
+    var progress = UTIL.norm(now.getTime(), timeRange[0], timeRange[1]);
+    var length = this.points.length;
+    var color = UTIL.lerpColor(colorRange[0], colorRange[1], progress);
+
+    _.each(this.points, function(p, i){
+      var z0 = startZ || p.z;
+      var z = UTIL.lerp(z0, targetZ, progress);
+      var c = p.color || color;
+      _this.renderPoint(ctx, width, p.x, p.y, z, c);
+    });
+
+    if (finishedTeaching && progress >= 1) {
+      this.onTeachingEnd();
+    }
   };
 
   Creature.prototype.setPoints = function(points){
     this.points = points;
+  };
+
+  Creature.prototype.teach = function(creature){
+    this.weights = creature.learn(this.points);
+
+    // for animation
+    this.transitionStart = new Date();
+    this.teachStart = new Date(this.transitionStart.getTime() + this.opt.transitionMs);
+    this.teachStop = new Date(this.teachStart.getTime() + this.opt.teachMs);
+    this.transitionStop = new Date(this.teachStop.getTime() + this.opt.transitionMs);
+    this.teachIncrementMs = this.opt.teachMs / this.points.length;
+    this.teachIndex = 0;
+    this.isTeaching = true;
   };
 
   return Creature;

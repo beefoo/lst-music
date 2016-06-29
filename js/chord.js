@@ -49,7 +49,7 @@ var Chord = (function() {
     });
   };
 
-  Chord.prototype.setKey = function(key){
+  Chord.prototype.setKey = function(key, transitionMs){
     var _this = this;
     var cordOpt = _.extend({ctx: this.opt.ctx}, this.opt.cord);
     var chord = CHORDS[key];
@@ -68,7 +68,7 @@ var Chord = (function() {
 
       // existing cord
       } else {
-        _this.cords[i].update(cordOpt)
+        _this.cords[i].update(cordOpt, transitionMs)
       }
     });
   };

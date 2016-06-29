@@ -13,7 +13,12 @@ var Cord = (function() {
     this.maxAmp = 0;
     this.power = 0;
     this.isOscillating = false;
+    this.isTransitioning = false;
     this.yc = 0;
+
+    // init canvas
+    this.canvasWidth = this.ctx.canvas.width;
+    this.canvasHeight = this.ctx.canvas.height;
 
     this.onUpdate();
   };
@@ -23,7 +28,28 @@ var Cord = (function() {
   };
 
   Cord.prototype.isActive = function(){
-    return this.isOscillating;
+    return this.isOscillating || this.isTransitioning;
+  };
+
+  Cord.prototype.onUpdateTransition = function(options, transitionMs) {
+    this.transitionStart = new Date();
+    this.transitionStop = new Date(this.transitionStart.getTime() + transitionMs);
+    this.transitionOptions = options;
+
+    var targetNote = NOTES[options.note];
+    var targetPitch = targetNote.pitch;
+
+    // determine start properties
+    this.len0 = this.len;
+    this.freq0 = this.freq;
+    this.tensity0 = this.tensity;
+
+    // determine end properties
+    this.len1 = targetNote.len;
+    this.freq1 = UTIL.lerp(this.opt.oscRange[0], this.opt.oscRange[1], targetPitch);
+    this.tensity1 = UTIL.lerp(this.opt.tensityRange[0], this.opt.tensityRange[1], targetPitch);
+
+    this.isTransitioning = true;
   };
 
   Cord.prototype.onUpdate = function(){
@@ -85,8 +111,8 @@ var Cord = (function() {
   };
 
   Cord.prototype.refreshCoordinates = function(){
-    var w = this.ctx.canvas.width;
-    var h = this.ctx.canvas.height;
+    var w = this.canvasWidth;
+    var h = this.canvasHeight;
     var l = this.len * w;
     var cordHeight = this.opt.height * h;
 
@@ -106,6 +132,7 @@ var Cord = (function() {
     var ctx = this.ctx;
     var curveRatio = this.opt.curveRatio;
 
+    this.transition();
     this.oscillate();
 
     ctx.beginPath();
@@ -136,13 +163,51 @@ var Cord = (function() {
   };
 
   Cord.prototype.resize = function(){
+    this.canvasWidth = this.ctx.canvas.width;
+    this.canvasHeight = this.ctx.canvas.height;
     this.refreshCoordinates();
     this.render();
   };
 
-  Cord.prototype.update = function(options){
-    _.extend(this.opt, options);
-    this.onUpdate();
+  Cord.prototype.toJSON = function(){
+    return {
+      index: this.opt.index,
+      note: this.note,
+      len: this.len,
+      pitch: this.pitch,
+      freq: this.freq,
+      tensity: this.tensity
+    };
+  };
+
+  Cord.prototype.transition = function(){
+    if (!this.isTransitioning) return false;
+
+    var now = new Date();
+
+    // transition complete
+    if (now >= this.transitionStop) {
+      this.update(this.transitionOptions);
+      this.isTransitioning = false;
+
+    // lerp properties and refresh
+    } else {
+      var progress = UTIL.norm(now.getTime(), this.transitionStart.getTime(), this.transitionStop.getTime());
+      this.len = UTIL.lerp(this.len0, this.len1, progress);
+      this.freq = UTIL.lerp(this.freq0, this.freq1, progress);
+      this.tensity = UTIL.lerp(this.tensity0, this.tensity1, progress);
+      this.refreshCoordinates();
+    }
+  };
+
+  Cord.prototype.update = function(options, transitionMs){
+    if (transitionMs) {
+      this.onUpdateTransition(_.extend({}, options), transitionMs);
+
+    } else {
+      _.extend(this.opt, options);
+      this.onUpdate();
+    }
   };
 
   return Cord;

@@ -19,7 +19,7 @@
 
   // Takes a value as well as an upper and lower limit, and returns a ratio 0 to 1
   UTIL.norm = function(a, a0, a1) {
-    return UTIL.lim((a-a0)/(a1-a0), a0, a1);
+    return UTIL.lim((a-a0)/(a1-a0), 0, 1);
   };
 
   // Takes a value and returns -1 or 1 if it's positive or negative

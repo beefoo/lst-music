@@ -2,7 +2,7 @@ var CONFIG = {
   debug: true,
 
   chord: {
-    duration: 4000,
+    transitionMs: 500,
     cord: {
       height: 0.1,
       curveRatio: 0.45,

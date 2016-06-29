@@ -42,6 +42,55 @@ html {
   }
 }
 
+.message-wrapper {
+  width: 100%;
+  height: auto;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  text-align: center;
+  @include animation(fadeOutDown 0.5s);
+
+  &.active {
+    @include animation(fadeInUp 0.5s);
+  }
+
+  .message {
+    color: $white;
+    font-size: 1.4em;
+    display: none;
+
+    &.active {
+      display: block;
+    }
+  }
+
+  h3 {
+    margin-bottom: 0.2em;
+  }
+
+  .gradient {
+    background: $red;
+    background: -moz-linear-gradient(left, $red 0%, $green 100%);
+    background: -webkit-linear-gradient(left, $red 0%, $green 100%);
+    background: linear-gradient(to right, $red 0%, $green 100%);
+    width: 50%;
+    min-width: 400px;
+    margin: 0 auto 10px;
+    padding: 10px 0;
+    @include clearfix();
+  }
+  .label {
+    float: left;
+    padding-left: 20px;
+
+    &.right {
+      float: right;
+      padding: 0 20px 0 0;
+    }
+  }
+}
+
 #debug {
   display: none;
   width: auto;

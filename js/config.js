@@ -1,5 +1,6 @@
 var CONFIG = {
   debug: true,
+  trainer: false,
   creatureCount: 1,
   maxVelocity: 4, // max velocity of user's gesture in px/s
 
@@ -20,8 +21,8 @@ var CONFIG = {
   creature: {
     strokeColor: [255, 255, 255], // white
     strokeWidth: 20,
-    strokeMs: 1000,
-    transitionMs: 2000,
+    strokeMs: 2000,
+    transitionMs: 1000,
     transitionZ: 0.5,
     teachMs: 4000,
     strokeColorTransition: [103, 95, 95], // gray

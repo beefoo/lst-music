@@ -21,6 +21,7 @@ var Creature = (function() {
   };
 
   Creature.prototype.forgetPoints = function(time){
+    time = time || new Date();
     var ms = this.opt.strokeMs;
 
     this.points = _.reject(this.points, function(p){
@@ -37,30 +38,44 @@ var Creature = (function() {
     var input = [0, 0, 0, 0];
     var gPrev = false;
     var now = new Date();
+    var path = TRAINING[_.random(0, TRAINING.length-1)];
 
-    for(var i=0; t < 10000; i++) {
-      var output = [Math.random(), Math.random(), Math.random(), Math.random()];
+    _.each(path, function(point) {
+      var output = point.slice(0);
+      var pxs = UTIL.lerp(0, maxV, output[3]);
       var gp = {
         x: output[0] * w,
         y: output[1] * h,
         z: 0,
         a: (output[2] - 0.5) * 360,
-        v: UTIL.lerp(0, maxV, output[3]),
+        v: output[3],
         t: new Date(now.getTime() + t)
       };
       if (gPrev) {
         var d = UTIL.dist(gPrev.x, gPrev.y, gp.x, gp.y);
-        var s = (1/gp.v) * d;
+        var s = (1/pxs) * d;
         t += s;
       }
       gPoints.push(gp);
       gPrev = _.clone(gp);
-    }
+      input = output.slice(0);
+    });
 
-    this.points = gPoints;
+    this.points = _.map(gPoints, _.clone);
+  };
+
+  Creature.prototype.getLastLine = function(){
+    var line = [];
+    var visible = _.filter(this.points, function(p){ return p.z > 0; });
+    if (visible.length > 1) {
+      line = visible.slice(visible.length - 2);
+    }
+    return line;
   };
 
   Creature.prototype.getPointsNormal = function(points){
+    points = points || this.points;
+
     var w = this.ctx.canvas.width;
     var h = this.ctx.canvas.height;
     var nPoints = [];
@@ -77,7 +92,7 @@ var Creature = (function() {
   };
 
   Creature.prototype.getPoints = function(){
-    return this.points;
+    return _.map(this.points, _.clone);
   };
 
   Creature.prototype.isActive = function(){
@@ -114,12 +129,14 @@ var Creature = (function() {
     var validPoints = [];
     _.each(this.points, function(p, i){
       var lerp = 1.0 - (now - p.t) / ms;
+      p.z = 0;
       if (lerp > 0 && lerp <= 1) {
         p.z = lerp;
-      } else {
-        p.z = 0;
       }
-      validPoints.push(p);
+      if (lerp > 0) {
+        validPoints.push(p);
+      }
+
     });
 
     this.points = validPoints;

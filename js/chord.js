@@ -17,14 +17,8 @@ var Chord = (function() {
 
   Chord.prototype.listenForPluck = function(creatures){
     var lines = [];
-    var paths = _.map(creatures, function(c){ return c.getPoints(); });
-
-    // retrieve the last segment from each path
-    _.each(paths, function(points){
-      if (points.length > 1) {
-        lines.push(points.slice(points.length - 2));
-      }
-    });
+    var lines = _.map(creatures, function(c){ return c.getLastLine(); });
+    lines = _.filter(lines, function(line){ return line.length > 1; });
 
     // look for intersections
     _.each(this.cords, function(c){

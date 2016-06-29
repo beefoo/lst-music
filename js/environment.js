@@ -107,11 +107,8 @@ var Environment = (function() {
     // pan moves
     h.on("panmove", function(e){
       if (_this.mode=='teaching') return false;
-      // remove points that are expired
-      var now = new Date();
-      _this.humanCreature.forgetPoints(now);
       // add current point
-      var d = _this.getGestureData(e, now);
+      var d = _this.getGestureData(e);
       _this.humanCreature.addPoint(d);
       _this.chord.listenForPluck([_this.humanCreature]);
     });
@@ -136,6 +133,7 @@ var Environment = (function() {
     var creature = this.creatures[_.random(0, this.creatures.length-1)];
     this.humanCreature.teach(creature);
     this.changeChord();
+    $.publish('user.create.points', {points: this.humanCreature.getPointsNormal()});
   };
 
   Environment.prototype.refreshCanvasSize = function(){
@@ -146,17 +144,23 @@ var Environment = (function() {
   };
 
   Environment.prototype.render = function(){
+    var _this = this;
+    
     this.clearCanvas();
 
     // Render machine creatures
-    // if (this.mode == 'machine') {
-    //   this.chord.listenForPluck(this.creatures);
-    //   _.each(this.creatures, function(c){
-    //     if (!c.isActive()) c.generate();
-    //     c.lerpPoints();
-    //     c.render();
-    //   });
-    // }
+    if (this.mode == 'machine') {
+
+      _.each(this.creatures, function(c){
+        if (!c.isActive()) {
+          _this.changeChord();
+          c.generate();
+        }
+        c.lerpPoints();
+        c.render();
+      });
+      this.chord.listenForPluck(this.creatures);
+    }
 
     // Render human creature
     this.humanCreature.lerpPoints();

@@ -1,6 +1,6 @@
 var CONFIG = {
   debug: true,
-  trainer: false,
+  trainer: true,
   creatureCount: 1,
   maxVelocity: 4, // max velocity of user's gesture in px/s
 

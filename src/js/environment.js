@@ -122,7 +122,6 @@ var Environment = (function() {
     // human finished teaching
     $.subscribe('creature.teach.finished', function(e, data){
       _this.mode = 'machine';
-      $.publish('message.hide', true);
     });
 
     // window is resized
@@ -135,7 +134,6 @@ var Environment = (function() {
     this.humanCreature.teach(creature);
     this.changeChord();
     $.publish('user.create.points', {points: this.humanCreature.getPointsNormal()});
-    $.publish('message.show.id', '#message-learning');
   };
 
   Environment.prototype.refreshCanvasSize = function(){

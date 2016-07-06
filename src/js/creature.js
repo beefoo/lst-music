@@ -151,13 +151,7 @@ var Creature = (function() {
   Creature.prototype.render = function(){
     var now = new Date();
 
-    if (this.isTeaching && now < this.teachStart) {
-      this.renderTransitionState(now);
-
-    } else if (this.isTeaching && now > this.teachStop) {
-      this.renderTransitionState(now);
-
-    } else if (this.isTeaching) {
+    if (this.isTeaching) {
       this.renderTeachingState(now);
 
     } else {
@@ -189,61 +183,7 @@ var Creature = (function() {
   };
 
   Creature.prototype.renderTeachingState = function(now){
-    var _this = this;
-    var ctx = this.ctx;
-    var colorRange = this.opt.strokeColorRangeTeach;
-    var width = this.opt.strokeWidth;
-
-    // determine transition progress
-    var progress = UTIL.norm(now.getTime(), this.teachStart.getTime(), this.teachStop.getTime());
-    var activeI = Math.floor(this.points.length * progress);
-
-
-    _.each(this.points, function(p, i){
-      if (i <= activeI) {
-        var color = colorRange[0];
-        var weight = _this.weights[i];
-        if (weight) color = UTIL.lerpColor(colorRange[0], colorRange[1], weight);
-        _this.points[i].color = color;
-        _this.renderPoint(ctx, width, p.x, p.y, 1, color);
-
-      } else {
-        _this.renderPoint(ctx, width, p.x, p.y, _this.opt.transitionZ, _this.opt.strokeColorTransition);
-      }
-    });
-  };
-
-  Creature.prototype.renderTransitionState = function(now){
-    var _this = this;
-    var ctx = this.ctx;
-    var colorRange = [this.opt.strokeColor, this.opt.strokeColorTransition];
-    var timeRange = [this.transitionStart.getTime(), this.teachStart.getTime()];
-    var width = this.opt.strokeWidth;
-    var startZ = false;
-    var targetZ = this.opt.transitionZ;
-    var finishedTeaching = now > this.teachStart;
-
-    if (finishedTeaching) {
-      timeRange = [this.teachStop.getTime(), this.transitionStop.getTime()];
-      targetZ = 0;
-      startZ = 1;
-    }
-
-    // determine transition progress
-    var progress = UTIL.norm(now.getTime(), timeRange[0], timeRange[1]);
-    var length = this.points.length;
-    var color = UTIL.lerpColor(colorRange[0], colorRange[1], progress);
-
-    _.each(this.points, function(p, i){
-      var z0 = startZ || p.z;
-      var z = UTIL.lerp(z0, targetZ, progress);
-      var c = p.color || color;
-      _this.renderPoint(ctx, width, p.x, p.y, z, c);
-    });
-
-    if (finishedTeaching && progress >= 1) {
-      this.onTeachingEnd();
-    }
+    this.onTeachingEnd();
   };
 
   Creature.prototype.setPoints = function(points){
@@ -252,14 +192,6 @@ var Creature = (function() {
 
   Creature.prototype.teach = function(creature){
     this.weights = creature.learn(this.points);
-
-    // for animation
-    this.transitionStart = new Date();
-    this.teachStart = new Date(this.transitionStart.getTime() + this.opt.transitionMs);
-    this.teachStop = new Date(this.teachStart.getTime() + this.opt.teachMs);
-    this.transitionStop = new Date(this.teachStop.getTime() + this.opt.transitionMs);
-    this.teachIncrementMs = this.opt.teachMs / this.points.length;
-    this.teachIndex = 0;
     this.isTeaching = true;
   };
 

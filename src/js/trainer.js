@@ -11,21 +11,19 @@ var Trainer = (function() {
     this.loadListeners();
   };
 
+  Trainer.prototype.addPoints = function(points){
+    var nPoints = _.map(points, function(p){
+      return [p.x, p.y, p.a, p.v];
+    });
+
+    this.points.push(nPoints);
+  };
+
   Trainer.prototype.loadListeners = function(){
     var _this = this;
 
     $.subscribe('user.create.points', function(e, data){
-      var nPoints = _.map(data.points, function(p){
-        return [p.x, p.y, p.a, p.v];
-      });
-
-      _this.points.push(nPoints);
-
-      if (_this.points.length >= 20) {
-        var obj = _this.points;
-        var data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj));
-        window.open(data, "", "_blank");
-      }
+      _this.addPoints(data.points);
     });
   };
 

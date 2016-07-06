@@ -1,0 +1,17 @@
+{
+  "name": "lst-music",
+  "version": "1.0.0",
+  "description": "A web app that learns, interprets, and plays music",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/beefoo/lst-music"
+  },
+  "dependencies": {
+    "gulp": "^3.9.0",
+    "gulp-include": "^2.1.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-sass": "^2.1.1",
+    "gulp-uglify": "^1.5.1"
+  },
+  "license": "MIT"
+}

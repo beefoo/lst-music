@@ -129,7 +129,7 @@ var Environment = (function() {
       _this.mode = 'machine';
     });
 
-    $.subscribe('training.loaded', function(e){
+    $.subscribe('training.loaded', function(e, d){
       _this.render();
     });
 

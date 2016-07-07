@@ -4,15 +4,17 @@ var CONFIG = {
   creatureCount: 1,
   maxVelocity: 4, // max velocity of user's gesture in px/s
   apiUrl: '/api',
+  trainingUrl: 'api/paths',
 
   analyzer: {
     nodeCount: 9,
     perRow: 3,
     width: 0.15,
     position: [0.575, 1],
+    restAfter: 4000,
     node: {
       active: {
-        widthRange: [0.5, 1],
+        widthRange: [0.2, 0.8],
         colorRange: [[168, 163, 133], [255, 255, 255]],
         oscRange: [0.0005, 0.001]
       },
@@ -47,13 +49,25 @@ var CONFIG = {
     teachMs: 4000,
     strokeColorTransition: [103, 95, 95], // gray
     strokeColorRangeTeach: [[248, 82, 82], [148, 255, 111]], // red -> green
-    trainingUrl: 'api/paths/index',
     network: {
 
     }
   },
 
-  player: {}
+  player: {
+    instrumentVolume: 0.5,
+    instruments: [
+      'audio/amarantine_0-023_c3.mp3',
+      'audio/amarantine_0-026_as2.mp3',
+      'audio/amarantine_0-034_ds.mp3',
+      'audio/eternal_main_guitar_1.mp3',
+      'audio/good_day_synth_a1.mp3',
+      'audio/good_day_synth_d2.mp3',
+      'audio/good_day_synth_f1.mp3',
+      'audio/good_day_synth_g1.mp3',
+      'audio/superman_vocal_01.mp3'
+    ]
+  }
 };
 
 // https://github.com/gleitz/midi-js-soundfonts/tree/master/FluidR3_GM/orchestral_harp-mp3

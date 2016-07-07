@@ -8,6 +8,7 @@ var Trainer = (function() {
 
   Trainer.prototype.init = function(){
     this.points = [];
+    this.loadData();
     this.loadListeners();
   };
 
@@ -37,6 +38,21 @@ var Trainer = (function() {
     session_id = Math.random().toString(36).substr(2, 8);
     localStorage.setItem('session_id', session_id);
     return session_id;
+  };
+
+  Trainer.prototype.loadData = function(){
+    var _this = this;
+
+    $.getJSON(this.opt.trainingUrl, function(data) {
+      var paths = _.map(data.paths, function(path){
+        var p = path.data;
+        var columns = p.columns;
+        return _.map(p.rows, function(row){
+          return _.object(columns, row);
+        });
+      });
+      $.publish('training.loaded', {data: paths});
+    });
   };
 
   Trainer.prototype.loadListeners = function(){

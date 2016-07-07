@@ -10,8 +10,75 @@ var Analyzer = (function() {
 
     // init canvas
     this.onUpdate();
-
     this.loadNodes();
+    this.loadListeners();
+  };
+
+  Analyzer.prototype.activate = function(path){
+    var distances = this.analyzePath(path);
+    var len = distances.length;
+    var minD = _.min(distances);
+    var maxD = _.max(distances);
+    distances = _.map(distances, function(d, i){ return {index: i, value: UTIL.norm(d, minD, maxD)}; });
+    distances = _.sortBy(distances, function(d){ return d.value; });
+    var weights = new Array(len);
+    this.activationDate = new Date();
+
+    _.each(distances, function(d, i){
+      weights[d.index] = (1-d.value) / Math.pow(2, i);
+    });
+
+    _.each(this.nodes, function(node, i){
+      node.activate(weights[i]);
+    });
+  };
+
+  Analyzer.prototype.analyze = function(paths){
+    var _this = this;
+    _.each(paths, function(path){
+      _this.analyzePath(path);
+    });
+  };
+
+  Analyzer.prototype.analyzePath = function(path){
+    var nodes = this.nodes;
+    var value = this.getValue(path);
+    var minDistance = 1;
+    var minNode = 0;
+    var distances = [];
+
+    // find the closest node
+    _.each(nodes, function(node, i){
+      var d = node.distance(value);
+      if (d < minDistance) {
+        minDistance = d;
+        minNode = i;
+      }
+      distances.push(d);
+    });
+
+    // add value to closest node
+    nodes[minNode].addValue(value);
+
+    return distances;
+  };
+
+  Analyzer.prototype.getValue = function(path){
+    var value = [0, 0, 0];
+    var precision = 100;
+    var len = path.length;
+
+    _.each(path, function(point){
+      var x = point.x * precision;
+      var y = point.y * precision;
+      var xy = y * precision + x;
+      var p = xy / (precision*precision);
+      value[0] += p;
+      value[1] += point.a;
+      value[2] += point.v;
+    });
+
+    return [value[0]/len, value[1]/len, value[2]/len];
   };
 
   Analyzer.prototype.isActive = function(){
@@ -24,6 +91,18 @@ var Analyzer = (function() {
       }
     }
     return nodeActive;
+  };
+
+  Analyzer.prototype.loadListeners = function(){
+    var _this = this;
+
+    $.subscribe('training.loaded', function(e, d){
+      _this.analyze(d.data);
+    });
+
+    $.subscribe('user.create.points', function(e, d){
+      _this.activate(d.points);
+    });
   };
 
   Analyzer.prototype.loadNodes = function(){
@@ -59,12 +138,20 @@ var Analyzer = (function() {
     pos.x = _.max([0, pos.x - pos.width]);
     pos.y = _.max([0, pos.y - pos.height]);
 
-
     this.pos = pos;
   };
 
   Analyzer.prototype.render = function(){
+    var rest = false;
+    if (this.activationDate) {
+      var t = new Date();
+      if ((t - this.activationDate) > this.opt.restAfter) {
+        rest = true;
+        this.activationDate = false;
+      }
+    }
     _.each(this.nodes, function(n){
+      if (rest) n.rest();
       n.render();
     });
   };

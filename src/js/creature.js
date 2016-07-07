@@ -9,12 +9,13 @@ var Creature = (function() {
     this.ctx = this.opt.ctx;
     this.isTeaching = false;
     this.points = [];
+    this.training = [];
     this.network = false;
-
     if (this.opt.type=='machine') {
       this.network = {};
-      this.loadTraining();
     }
+
+    this.loadListeners();
   };
 
   Creature.prototype.addPoint = function(p){
@@ -154,21 +155,14 @@ var Creature = (function() {
     this.points = validPoints;
   };
 
-  Creature.prototype.loadTraining = function(){
+  Creature.prototype.loadListeners = function(){
     var _this = this;
-    this.training = [];
 
-    $.getJSON(this.opt.trainingUrl, function(data) {
-      var paths = _.map(data.paths, function(path){
-        var p = path.data;
-        var columns = p.columns;
-        return _.map(p.rows, function(row){
-          return _.object(columns, row);
-        });
+    if (this.opt.type=='machine') {
+      $.subscribe('training.loaded', function(e, d){
+        _this.training = _.map(d.data, _.clone);
       });
-      _this.training = paths;
-      $.publish('training.loaded', true);
-    });
+    }
   };
 
   Creature.prototype.onTeachingEnd = function(){

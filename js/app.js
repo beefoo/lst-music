@@ -290,6 +290,7 @@ var Trainer = (function() {
 
   Trainer.prototype.init = function(){
     this.points = [];
+    this.loadData();
     this.loadListeners();
   };
 
@@ -321,6 +322,21 @@ var Trainer = (function() {
     return session_id;
   };
 
+  Trainer.prototype.loadData = function(){
+    var _this = this;
+
+    $.getJSON(this.opt.trainingUrl, function(data) {
+      var paths = _.map(data.paths, function(path){
+        var p = path.data;
+        var columns = p.columns;
+        return _.map(p.rows, function(row){
+          return _.object(columns, row);
+        });
+      });
+      $.publish('training.loaded', {data: paths});
+    });
+  };
+
   Trainer.prototype.loadListeners = function(){
     var _this = this;
 
@@ -345,23 +361,34 @@ var Player = (function() {
   }
 
   Player.prototype.init = function(){
+    this.sounds = {};
     this.loadPlayer();
+  };
+
+  Player.prototype.addSound = function(k, file){
+    this.sounds[k] = soundManager.createSound({
+      id: k,
+      url: file,
+      autoLoad: true,
+      autoPlay: false,
+      multiShot: true
+    });
+  };
+
+  Player.prototype.loadInstruments = function(){
+    var _this = this;
+
+    _.each(this.opt.instruments, function(file, i){
+      _this.addSound('instrument'+i, file);
+    });
   };
 
   Player.prototype.loadNotes = function(){
     var _this = this;
-    this.notes = _.clone(NOTES);
 
-    _.each(this.notes, function(n, k){
-      _this.notes[k].sound = soundManager.createSound({
-        id: k,
-        url: n.file,
-        autoLoad: true,
-        autoPlay: false,
-        multiShot: true
-      });
+    _.each(NOTES, function(n, k){
+      _this.addSound(k, n.file);
     });
-
   };
 
   Player.prototype.loadPlayer = function(){
@@ -372,6 +399,7 @@ var Player = (function() {
       useHTML5Audio: true,
       onready: function() {
         _this.loadNotes();
+        _this.loadInstruments();
         _this.loadListeners();
       }
     });
@@ -383,13 +411,17 @@ var Player = (function() {
     $.subscribe('note.play', function(e, key, volume){
       _this.play(key, volume);
     });
+
+    $.subscribe('instrument.play', function(e, index, volume){
+      _this.play('instrument'+index, volume * _this.opt.instrumentVolume);
+    });
   };
 
   Player.prototype.play = function(key, volume){
-    var n = this.notes[key];
-    if (n) {
-      n.sound.setVolume(volume*100);
-      n.sound.play();
+    var s = this.sounds[key];
+    if (s) {
+      s.setVolume(volume*100);
+      s.play();
     }
   };
 
@@ -701,12 +733,13 @@ var Creature = (function() {
     this.ctx = this.opt.ctx;
     this.isTeaching = false;
     this.points = [];
+    this.training = [];
     this.network = false;
-
     if (this.opt.type=='machine') {
       this.network = {};
-      this.loadTraining();
     }
+
+    this.loadListeners();
   };
 
   Creature.prototype.addPoint = function(p){
@@ -846,21 +879,14 @@ var Creature = (function() {
     this.points = validPoints;
   };
 
-  Creature.prototype.loadTraining = function(){
+  Creature.prototype.loadListeners = function(){
     var _this = this;
-    this.training = [];
 
-    $.getJSON(this.opt.trainingUrl, function(data) {
-      var paths = _.map(data.paths, function(path){
-        var p = path.data;
-        var columns = p.columns;
-        return _.map(p.rows, function(row){
-          return _.object(columns, row);
-        });
+    if (this.opt.type=='machine') {
+      $.subscribe('training.loaded', function(e, d){
+        _this.training = _.map(d.data, _.clone);
       });
-      _this.training = paths;
-      $.publish('training.loaded', true);
-    });
+    }
   };
 
   Creature.prototype.onTeachingEnd = function(){
@@ -1051,7 +1077,7 @@ var Environment = (function() {
       _this.mode = 'machine';
     });
 
-    $.subscribe('training.loaded', function(e){
+    $.subscribe('training.loaded', function(e, d){
       _this.render();
     });
 
@@ -1143,8 +1169,50 @@ var Node = (function() {
     this.ctx = this.opt.ctx;
     this.mode = 'resting';
     this.oscTimeStart = new Date();
-    this.setPower(Math.random());
+    this.oscTimeStart = this.oscTimeStart.getTime() - _.random(0, 2000);
+    this.direction = false;
+    this.initValue();
+    this.setPower(0);
     this.resize();
+  };
+
+  Node.prototype.activate = function(value){
+    this.mode = 'active';
+    this.setPower(value);
+  };
+
+  Node.prototype.addValue = function(v){
+    var newValue = [];
+    var count = this.count;
+    var value = this.value;
+
+    for (var i=0; i<value.length; i++) {
+      var n = (value[i] * count + v[i]) / (count + 1);
+      newValue.push(n);
+    }
+
+    this.value = newValue;
+    this.count += 1;
+  };
+
+  Node.prototype.distance = function(v1){
+    var v2 = this.value;
+    var x1 = v1[0], x2 = v2[0],
+        y1 = v1[1], y2 = v2[1],
+        z1 = v1[2], z2 = v2[2];
+    return Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)+(z2-z1)*(z2-z1));
+  };
+
+  Node.prototype.initValue = function(){
+    // var i = this.opt.index;
+    // var value = [1, 1, 1];
+    // var corner = i % 8;
+    // if (corner % 2 == 0) value[0] = 0;
+    // else value[1] = 0;
+    // if (corner < 4) value[2] = 0;
+
+    this.value = [Math.random(), Math.random(), Math.random()];
+    this.count = 1;
   };
 
   Node.prototype.isActive = function(){
@@ -1162,6 +1230,28 @@ var Node = (function() {
     this.colorRange = [colors[0], UTIL.lerpColor(colors[0], colors[1], this.power)];
   };
 
+  Node.prototype.play = function(amount){
+    if (this.prevAmount) {
+      if (this.direction===false) {
+        this.direction = this.prevAmount > amount ? -1 : 1;
+
+      } else {
+        var goingDown = this.prevAmount > amount && this.direction > 0;
+        var goingUp = this.prevAmount < amount && this.direction < 0;
+        // changing directions
+        if (goingDown || goingUp) {
+          this.direction *= -1;
+          // play if power and reached peak
+          if (goingDown && this.power > 0) {
+            $.publish('instrument.play', [this.opt.index, this.power]);
+          }
+        }
+      }
+
+    }
+    this.prevAmount = amount;
+  };
+
   Node.prototype.render = function(){
     var ctx = this.ctx;
     var pos = this.pos;
@@ -1169,10 +1259,13 @@ var Node = (function() {
     var t = new Date();
     var td = (t - this.oscTimeStart) * this.freq;
     var a = 2 * Math.PI * td;
-    var amount = Math.cos(a);
+    var amount = UTIL.norm(Math.cos(a), -1, 1);
 
     var color = UTIL.lerpColor(this.colorRange[0], this.colorRange[1], amount);
     var radius = UTIL.lerp(this.widthRange[0], this.widthRange[1], amount) * pos.r;
+
+    // check for sound
+    this.play(amount);
 
     ctx.beginPath();
     ctx.fillStyle = 'rgb('+color.join(',')+')';
@@ -1197,9 +1290,9 @@ var Node = (function() {
     this.pos = pos;
   };
 
-  Node.prototype.setMode = function(name){
-    this.mode = name;
-    this.onUpdate();
+  Node.prototype.rest = function(){
+    this.mode = 'resting';
+    this.setPower(0);
   };
 
   Node.prototype.setPower = function(value){
@@ -1223,8 +1316,75 @@ var Analyzer = (function() {
 
     // init canvas
     this.onUpdate();
-
     this.loadNodes();
+    this.loadListeners();
+  };
+
+  Analyzer.prototype.activate = function(path){
+    var distances = this.analyzePath(path);
+    var len = distances.length;
+    var minD = _.min(distances);
+    var maxD = _.max(distances);
+    distances = _.map(distances, function(d, i){ return {index: i, value: UTIL.norm(d, minD, maxD)}; });
+    distances = _.sortBy(distances, function(d){ return d.value; });
+    var weights = new Array(len);
+    this.activationDate = new Date();
+
+    _.each(distances, function(d, i){
+      weights[d.index] = (1-d.value) / Math.pow(2, i);
+    });
+
+    _.each(this.nodes, function(node, i){
+      node.activate(weights[i]);
+    });
+  };
+
+  Analyzer.prototype.analyze = function(paths){
+    var _this = this;
+    _.each(paths, function(path){
+      _this.analyzePath(path);
+    });
+  };
+
+  Analyzer.prototype.analyzePath = function(path){
+    var nodes = this.nodes;
+    var value = this.getValue(path);
+    var minDistance = 1;
+    var minNode = 0;
+    var distances = [];
+
+    // find the closest node
+    _.each(nodes, function(node, i){
+      var d = node.distance(value);
+      if (d < minDistance) {
+        minDistance = d;
+        minNode = i;
+      }
+      distances.push(d);
+    });
+
+    // add value to closest node
+    nodes[minNode].addValue(value);
+
+    return distances;
+  };
+
+  Analyzer.prototype.getValue = function(path){
+    var value = [0, 0, 0];
+    var precision = 100;
+    var len = path.length;
+
+    _.each(path, function(point){
+      var x = point.x * precision;
+      var y = point.y * precision;
+      var xy = y * precision + x;
+      var p = xy / (precision*precision);
+      value[0] += p;
+      value[1] += point.a;
+      value[2] += point.v;
+    });
+
+    return [value[0]/len, value[1]/len, value[2]/len];
   };
 
   Analyzer.prototype.isActive = function(){
@@ -1237,6 +1397,18 @@ var Analyzer = (function() {
       }
     }
     return nodeActive;
+  };
+
+  Analyzer.prototype.loadListeners = function(){
+    var _this = this;
+
+    $.subscribe('training.loaded', function(e, d){
+      _this.analyze(d.data);
+    });
+
+    $.subscribe('user.create.points', function(e, d){
+      _this.activate(d.points);
+    });
   };
 
   Analyzer.prototype.loadNodes = function(){
@@ -1272,12 +1444,20 @@ var Analyzer = (function() {
     pos.x = _.max([0, pos.x - pos.width]);
     pos.y = _.max([0, pos.y - pos.height]);
 
-
     this.pos = pos;
   };
 
   Analyzer.prototype.render = function(){
+    var rest = false;
+    if (this.activationDate) {
+      var t = new Date();
+      if ((t - this.activationDate) > this.opt.restAfter) {
+        rest = true;
+        this.activationDate = false;
+      }
+    }
     _.each(this.nodes, function(n){
+      if (rest) n.rest();
       n.render();
     });
   };

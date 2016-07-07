@@ -40,15 +40,15 @@ var Environment = (function() {
   };
 
   Environment.prototype.isActive = function(){
-    // var creatures = this.creatures;
-    // var isCreaturesActive = false;
-    // for (var i=0; i < creatures.length; i++) {
-    //   if (creatures[i].isActive()) {
-    //     isCreaturesActive = true;
-    //     break;
-    //   }
-    // }
-    return this.humanCreature.isActive() || this.chord.isActive() || this.mode=='machine';
+    var creatures = this.creatures;
+    var isCreaturesActive = false;
+    for (var i=0; i < creatures.length; i++) {
+      if (creatures[i].isActive()) {
+        isCreaturesActive = true;
+        break;
+      }
+    }
+    return isCreaturesActive || this.humanCreature.isActive() || this.chord.isActive();
   };
 
   Environment.prototype.loadCanvas = function(){
@@ -153,7 +153,6 @@ var Environment = (function() {
 
     // Render machine creatures
     if (this.mode == 'machine') {
-
       _.each(this.creatures, function(c){
         if (!c.isActive()) {
           _this.changeChord();
@@ -163,6 +162,11 @@ var Environment = (function() {
         c.render();
       });
       this.chord.listenForPluck(this.creatures);
+
+    } else {
+      _.each(this.creatures, function(c){
+        c.clearPoints();
+      });
     }
 
     // Render human creature

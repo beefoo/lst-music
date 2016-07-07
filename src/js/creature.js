@@ -21,6 +21,14 @@ var Creature = (function() {
     this.points.push(p);
   };
 
+  Creature.prototype.addTrainingPoints = function(points){
+    this.training.push(points);
+  };
+
+  Creature.prototype.clearPoints = function(){
+    this.points = [];
+  };
+
   Creature.prototype.forgetPoints = function(time){
     time = time || new Date();
     var ms = this.opt.strokeMs;
@@ -31,6 +39,8 @@ var Creature = (function() {
   };
 
   Creature.prototype.generate = function(){
+    if (this.training.length <= 0) return false;
+
     var w = this.ctx.canvas.width;
     var h = this.ctx.canvas.height;
     var maxV = this.opt.maxVelocity;
@@ -100,11 +110,13 @@ var Creature = (function() {
   };
 
   Creature.prototype.learn = function(points){
-    points = this.getPointsNormal(points);
+    var nPoints = this.getPointsNormal(points);
     var prev = {x: 0, y: 0, a: 0, v: 0};
     var weights = [];
 
-    _.each(points, function(p, i){
+    this.addTrainingPoints(nPoints);
+
+    _.each(nPoints, function(p, i){
       var input = [prev.x, prev.y, prev.a, prev.v];
       var expected = [p.x, p.y, p.a, p.v];
       var output = [Math.random(), Math.random(), Math.random(), Math.random()];
@@ -114,7 +126,7 @@ var Creature = (function() {
       });
       var weight = UTIL.mean(diff);
       weights.push(weight);
-      prev = points[i];
+      prev = nPoints[i];
     });
 
     return weights;
@@ -161,7 +173,7 @@ var Creature = (function() {
 
   Creature.prototype.onTeachingEnd = function(){
     this.isTeaching = false;
-    this.points = [];
+    // this.points = [];
     $.publish('creature.teach.finished', true);
   };
 

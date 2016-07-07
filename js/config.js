@@ -5,6 +5,25 @@ var CONFIG = {
   maxVelocity: 4, // max velocity of user's gesture in px/s
   apiUrl: '/api',
 
+  analyzer: {
+    nodeCount: 9,
+    perRow: 3,
+    width: 0.15,
+    position: [0.575, 1],
+    node: {
+      active: {
+        widthRange: [0.5, 1],
+        colorRange: [[168, 163, 133], [255, 255, 255]],
+        oscRange: [0.0005, 0.001]
+      },
+      resting: {
+        widthRange: [0.3, 0.5],
+        colorRange: [[56, 55, 50], [101, 100, 92]],
+        oscRange: [0.0003, 0.0005]
+      }
+    }
+  },
+
   chord: {
     transitionMs: 500,
     cord: {

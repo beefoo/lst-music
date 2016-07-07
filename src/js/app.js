@@ -14,4 +14,6 @@
 //=include chord.js
 //=include creature.js
 //=include environment.js
+//=include node.js
+//=include analyzer.js
 //=include debug.js

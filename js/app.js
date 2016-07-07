@@ -474,7 +474,7 @@ var Cord = (function() {
     }
     var t = new Date();
     var td = (t - this.oscTimeStart) * this.freq;
-    var a = 2 * Math.PI * (td);
+    var a = 2 * Math.PI * td;
     var ex = Math.exp(td * this.tensity); // exponential function; gets bigger over time
     this.amp = this.maxAmp / ex; // the current amplitude; gets smaller over time
     this.yc = Math.cos(a) * this.amp; // the oscillating y-coordinate
@@ -521,7 +521,7 @@ var Cord = (function() {
 
     this.x0 = (w - l) * 0.5;
     this.x1 = this.x0 + l;
-    this.y0 = cordHeight * this.opt.index + cordHeight * this.opt.count * 0.5;
+    this.y0 = cordHeight * this.opt.index + cordHeight * this.opt.count * (1/3);
     this.y1 = this.y0;
     this.line = [{x: this.x0, y: this.y0}, {x: this.x1, y: this.y1}];
 
@@ -934,6 +934,7 @@ var Environment = (function() {
     this.loadCanvas();
     this.loadCreatures();
     this.loadChord();
+    this.loadAnalyzer();
     this.loadListeners();
   };
 
@@ -970,7 +971,12 @@ var Environment = (function() {
     //     break;
     //   }
     // }
-    return this.mode=='machine' || this.humanCreature.isActive() || this.chord.isActive();
+    return this.mode=='machine' || this.analyzer.isActive() || this.humanCreature.isActive() || this.chord.isActive();
+  };
+
+  Environment.prototype.loadAnalyzer = function(){
+    var analyzerOpt = _.extend({ctx: this.ctx}, this.opt.analyzer);
+    this.analyzer = new Analyzer(analyzerOpt);
   };
 
   Environment.prototype.loadCanvas = function(){
@@ -1098,6 +1104,9 @@ var Environment = (function() {
     // render chord
     this.chord.render();
 
+    // render analyzer
+    this.analyzer.render();
+
     // only render if there's something to animate
     if (this.isActive()) {
       this.active = true;
@@ -1111,6 +1120,7 @@ var Environment = (function() {
   Environment.prototype.resize = function(){
     this.refreshCanvasSize();
     this.chord && this.chord.resize();
+    this.analyzer && this.analyzer.resize();
     if (!this.active) this.render();
   };
 
@@ -1121,6 +1131,169 @@ var Environment = (function() {
 $(function(){
   var env = new Environment(CONFIG);
 });
+
+var Node = (function() {
+  function Node(options) {
+    var defaults = {};
+    this.opt = _.extend({}, defaults, options);
+    this.init();
+  }
+
+  Node.prototype.init = function(){
+    this.ctx = this.opt.ctx;
+    this.mode = 'resting';
+    this.oscTimeStart = new Date();
+    this.setPower(Math.random());
+    this.resize();
+  };
+
+  Node.prototype.isActive = function(){
+    return true;
+  };
+
+  Node.prototype.onUpdate = function(){
+    var props = this.opt[this.mode];
+    var widths = props.widthRange;
+    var colors = props.colorRange;
+    var oscs = props.oscRange;
+
+    this.freq = UTIL.lerp(oscs[0], oscs[1], this.power);
+    this.widthRange = [widths[0], widths[1] * this.power];
+    this.colorRange = [colors[0], UTIL.lerpColor(colors[0], colors[1], this.power)];
+  };
+
+  Node.prototype.render = function(){
+    var ctx = this.ctx;
+    var pos = this.pos;
+
+    var t = new Date();
+    var td = (t - this.oscTimeStart) * this.freq;
+    var a = 2 * Math.PI * td;
+    var amount = Math.cos(a);
+
+    var color = UTIL.lerpColor(this.colorRange[0], this.colorRange[1], amount);
+    var radius = UTIL.lerp(this.widthRange[0], this.widthRange[1], amount) * pos.r;
+
+    ctx.beginPath();
+    ctx.fillStyle = 'rgb('+color.join(',')+')';
+    ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+    ctx.fill();
+  };
+
+  Node.prototype.resize = function(parent){
+    if (parent) this.opt.parent = parent;
+    var parentOpt = this.opt.parent;
+
+    var pos = {x: 0, y: 0, d: 0, r: 0};
+    var perRow = this.opt.perRow;
+    var index = this.opt.index;
+
+    // determine position
+    pos.d = parentOpt.width / perRow;
+    pos.r = pos.d / 2;
+    pos.x = parentOpt.x + (index % perRow) * pos.d + pos.r;
+    pos.y = parentOpt.y + Math.floor(index / perRow) * pos.d + pos.r;
+
+    this.pos = pos;
+  };
+
+  Node.prototype.setMode = function(name){
+    this.mode = name;
+    this.onUpdate();
+  };
+
+  Node.prototype.setPower = function(value){
+    this.power = value;
+    this.onUpdate();
+  };
+
+  return Node;
+
+})();
+
+var Analyzer = (function() {
+  function Analyzer(options) {
+    var defaults = {};
+    this.opt = _.extend({}, defaults, options);
+    this.init();
+  }
+
+  Analyzer.prototype.init = function(){
+    this.ctx = this.opt.ctx;
+
+    // init canvas
+    this.onUpdate();
+
+    this.loadNodes();
+  };
+
+  Analyzer.prototype.isActive = function(){
+    var nodeActive = false;
+    for (var i=0; i<this.nodes.length; i++) {
+      var n = this.nodes[i];
+      if (n.isActive()) {
+        nodeActive = true;
+        break;
+      }
+    }
+    return nodeActive;
+  };
+
+  Analyzer.prototype.loadNodes = function(){
+    var _this = this;
+    var nodeCount = this.opt.nodeCount;
+    var perRow = this.opt.perRow;
+    var nodeOpt = this.opt.node;
+    var position = _.clone(this.pos);
+    var ctx = this.ctx;
+
+    this.nodes = [];
+    _(nodeCount).times(function(i){
+      _this.nodes.push(new Node(_.extend({index: i, ctx: ctx, perRow: perRow, parent: position}, nodeOpt)));
+    });
+  };
+
+  Analyzer.prototype.onUpdate = function(){
+    this.canvasWidth = this.ctx.canvas.width;
+    this.canvasHeight = this.ctx.canvas.height;
+    var pos = {x: 0, y: 0};
+    var perRow = this.opt.perRow;
+
+    // determine width and height
+    pos.width = this.opt.width * this.canvasWidth;
+    var nodeW = pos.width / perRow;
+    var rows = Math.ceil(this.opt.nodeCount / perRow);
+    pos.height = nodeW * rows;
+
+    // determine x and y
+    pos.x = this.opt.position[0] * this.canvasWidth;
+    pos.y = this.opt.position[1] * this.canvasHeight;
+
+    pos.x = _.max([0, pos.x - pos.width]);
+    pos.y = _.max([0, pos.y - pos.height]);
+
+
+    this.pos = pos;
+  };
+
+  Analyzer.prototype.render = function(){
+    _.each(this.nodes, function(n){
+      n.render();
+    });
+  };
+
+  Analyzer.prototype.resize = function(){
+    var _this = this;
+    this.onUpdate();
+
+    _.each(this.nodes, function(n){
+      n.resize(_.clone(_this.pos));
+    });
+  };
+
+  return Analyzer;
+
+})();
 
 var Debug = (function() {
   function Debug(options) {

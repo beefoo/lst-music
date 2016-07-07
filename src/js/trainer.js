@@ -26,7 +26,7 @@ var Trainer = (function() {
       data: JSON.stringify(data),
       session: session_id
     }, function(d){
-      console.log('Saved', d);
+      // console.log('Saved', d);
     });
   };
 

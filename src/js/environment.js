@@ -13,7 +13,6 @@ var Environment = (function() {
     this.loadCreatures();
     this.loadChord();
     this.loadListeners();
-    this.render();
   };
 
   Environment.prototype.changeChord = function(){
@@ -122,6 +121,10 @@ var Environment = (function() {
     // human finished teaching
     $.subscribe('creature.teach.finished', function(e, data){
       _this.mode = 'machine';
+    });
+
+    $.subscribe('training.loaded', function(e){
+      _this.render();
     });
 
     // window is resized

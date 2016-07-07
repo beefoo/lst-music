@@ -13,6 +13,7 @@ var Creature = (function() {
 
     if (this.opt.type=='machine') {
       this.network = {};
+      this.loadTraining();
     }
   };
 
@@ -38,17 +39,16 @@ var Creature = (function() {
     var input = [0, 0, 0, 0];
     var gPrev = false;
     var now = new Date();
-    var path = TRAINING[_.random(0, TRAINING.length-1)];
+    var path = this.training[_.random(0, this.training.length-1)];
 
     _.each(path, function(point) {
-      var output = point.slice(0);
-      var pxs = UTIL.lerp(0, maxV, output[3]);
+      var pxs = UTIL.lerp(0, maxV, point.v);
       var gp = {
-        x: output[0] * w,
-        y: output[1] * h,
+        x: point.x * w,
+        y: point.y * h,
         z: 0,
-        a: (output[2] - 0.5) * 360,
-        v: output[3],
+        a: (point.a - 0.5) * 360,
+        v: point.v,
         t: new Date(now.getTime() + t)
       };
       if (gPrev) {
@@ -58,7 +58,7 @@ var Creature = (function() {
       }
       gPoints.push(gp);
       gPrev = _.clone(gp);
-      input = output.slice(0);
+      input = _.clone(point);
     });
 
     this.points = _.map(gPoints, _.clone);
@@ -140,6 +140,23 @@ var Creature = (function() {
     });
 
     this.points = validPoints;
+  };
+
+  Creature.prototype.loadTraining = function(){
+    var _this = this;
+    this.training = [];
+
+    $.getJSON(this.opt.trainingUrl, function(data) {
+      var paths = _.map(data.paths, function(path){
+        var p = path.data;
+        var columns = p.columns;
+        return _.map(p.rows, function(row){
+          return _.object(columns, row);
+        });
+      });
+      _this.training = paths;
+      $.publish('training.loaded', true);
+    });
   };
 
   Creature.prototype.onTeachingEnd = function(){

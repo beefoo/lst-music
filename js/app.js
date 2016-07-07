@@ -962,15 +962,15 @@ var Environment = (function() {
   };
 
   Environment.prototype.isActive = function(){
-    var creatures = this.creatures;
-    var isCreaturesActive = false;
-    for (var i=0; i < creatures.length; i++) {
-      if (creatures[i].isActive()) {
-        isCreaturesActive = true;
-        break;
-      }
-    }
-    return isCreaturesActive || this.humanCreature.isActive() || this.chord.isActive();
+    // var creatures = this.creatures;
+    // var isCreaturesActive = false;
+    // for (var i=0; i < creatures.length; i++) {
+    //   if (creatures[i].isActive()) {
+    //     isCreaturesActive = true;
+    //     break;
+    //   }
+    // }
+    return this.mode=='machine' || this.humanCreature.isActive() || this.chord.isActive();
   };
 
   Environment.prototype.loadCanvas = function(){
@@ -983,7 +983,7 @@ var Environment = (function() {
   };
 
   Environment.prototype.loadChord = function(){
-    this.progression = _.keys(CHORDS);
+    this.progression = PROGRESSION.slice(0);
     this.chordCount = this.progression.length;
     this.currentProgressionIndex = 0;
     this.currentChord = this.progression[this.currentProgressionIndex];

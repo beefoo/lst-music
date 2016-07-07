@@ -16,7 +16,27 @@ var Trainer = (function() {
       return [p.x, p.y, p.a, p.v];
     });
 
-    this.points.push(nPoints);
+    // this.points.push(nPoints);
+    var data = {
+      columns: ['x', 'y', 'a', 'v'],
+      rows: nPoints
+    };
+    var session_id = this.getSession();
+    $.post(this.opt.apiUrl + '/paths/create', {
+      data: JSON.stringify(data),
+      session: session_id
+    }, function(d){
+      console.log('Saved', d);
+    });
+  };
+
+  Trainer.prototype.getSession = function(){
+    var session_id = localStorage.getItem('session_id');
+    if (session_id) return session_id;
+
+    session_id = Math.random().toString(36).substr(2, 8);
+    localStorage.setItem('session_id', session_id);
+    return session_id;
   };
 
   Trainer.prototype.loadListeners = function(){

@@ -3,6 +3,7 @@ var CONFIG = {
   trainer: true,
   creatureCount: 1,
   maxVelocity: 4, // max velocity of user's gesture in px/s
+  apiUrl: '/api',
 
   chord: {
     transitionMs: 500,

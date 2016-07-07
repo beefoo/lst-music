@@ -5,7 +5,7 @@ class Paths_model extends CI_Model {
   }
 
   function accessibleFields(){
-    return array("data");
+    return array("session", "data");
   }
 
   function getEntries($params=array()){

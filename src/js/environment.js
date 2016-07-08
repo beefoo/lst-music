@@ -101,7 +101,7 @@ var Environment = (function() {
 
     // pan starts
     h.on("panstart", function(e){
-      if (_this.mode=='teaching') return false;
+      // if (_this.mode=='teaching') return false;
       _this.mode = 'human';
       var d = _this.getGestureData(e);
       _this.humanCreature.setPoints([d]);
@@ -163,6 +163,7 @@ var Environment = (function() {
         if (!c.isActive()) {
           _this.changeChord();
           c.generate();
+          $.publish('machine.create.points', {points: c.getPointsNormal()});
         }
         c.lerpPoints();
         c.render();

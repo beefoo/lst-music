@@ -103,6 +103,10 @@ var Analyzer = (function() {
     $.subscribe('user.create.points', function(e, d){
       _this.activate(d.points);
     });
+
+    $.subscribe('machine.create.points', function(e, d){
+      _this.activate(d.points);
+    });
   };
 
   Analyzer.prototype.loadNodes = function(){

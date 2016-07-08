@@ -858,7 +858,7 @@ var Creature = (function() {
   };
 
   Creature.prototype.lerpPoints = function(){
-    if (this.isTeaching) return false;
+    // if (this.isTeaching) return false;
 
     var now = new Date();
     var ms = this.opt.strokeMs;
@@ -898,8 +898,8 @@ var Creature = (function() {
   Creature.prototype.render = function(){
     var now = new Date();
 
-    if (this.isTeaching) {
-      this.renderTeachingState(now);
+    if (this.isTeaching && this.points.length <= 0 && (now-this.teachTime) > this.opt.teachMs) {
+      this.onTeachingEnd();
 
     } else {
       this.renderNormalState();
@@ -930,7 +930,7 @@ var Creature = (function() {
   };
 
   Creature.prototype.renderTeachingState = function(now){
-    this.onTeachingEnd();
+
   };
 
   Creature.prototype.setPoints = function(points){
@@ -940,6 +940,7 @@ var Creature = (function() {
   Creature.prototype.teach = function(creature){
     this.weights = creature.learn(this.points);
     this.isTeaching = true;
+    this.teachTime = new Date();
   };
 
   return Creature;
@@ -1049,7 +1050,7 @@ var Environment = (function() {
 
     // pan starts
     h.on("panstart", function(e){
-      if (_this.mode=='teaching') return false;
+      // if (_this.mode=='teaching') return false;
       _this.mode = 'human';
       var d = _this.getGestureData(e);
       _this.humanCreature.setPoints([d]);
@@ -1111,6 +1112,7 @@ var Environment = (function() {
         if (!c.isActive()) {
           _this.changeChord();
           c.generate();
+          $.publish('machine.create.points', {points: c.getPointsNormal()});
         }
         c.lerpPoints();
         c.render();
@@ -1407,6 +1409,10 @@ var Analyzer = (function() {
     });
 
     $.subscribe('user.create.points', function(e, d){
+      _this.activate(d.points);
+    });
+
+    $.subscribe('machine.create.points', function(e, d){
       _this.activate(d.points);
     });
   };

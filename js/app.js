@@ -419,7 +419,7 @@ var Player = (function() {
 
   Player.prototype.play = function(key, volume){
     var s = this.sounds[key];
-    if (s) {
+    if (s && volume > this.opt.minVolume) {
       s.setVolume(volume*100);
       s.play();
     }
@@ -797,6 +797,7 @@ var Creature = (function() {
     });
 
     this.points = _.map(gPoints, _.clone);
+    this.generateTime = new Date();
   };
 
   Creature.prototype.getLastLine = function(){
@@ -831,7 +832,14 @@ var Creature = (function() {
   };
 
   Creature.prototype.isActive = function(){
-    return this.points.length || this.isTeaching;
+    if (this.points.length || this.isTeaching) return true;
+
+    if (this.generateTime) {
+      var now = new Date();
+      if ((now - this.generateTime) < (this.opt.strokeMs + this.opt.restMs)) return true;
+    }
+
+    return false;
   };
 
   Creature.prototype.learn = function(points){
@@ -959,8 +967,10 @@ var Environment = (function() {
     this.mode = 'machine';
 
     this.loadCanvas();
-    this.loadCreatures();
-    this.loadChord();
+    if (this.opt.mode=='standard') {
+      this.loadCreatures();
+      this.loadChord();
+    }
     this.loadAnalyzer();
     this.loadListeners();
   };
@@ -1045,38 +1055,41 @@ var Environment = (function() {
     var ms = this.opt.strokeMs;
     var h = new Hammer(this.$canvas[0]);
 
-    // let the pan gesture support all directions.
-    h.get('pan').set({ direction: Hammer.DIRECTION_ALL });
+    if (this.opt.mode=='standard') {
 
-    // pan starts
-    h.on("panstart", function(e){
-      // if (_this.mode=='teaching') return false;
-      _this.mode = 'human';
-      var d = _this.getGestureData(e);
-      _this.humanCreature.setPoints([d]);
-      // invoke render if not already animating
-      if (!_this.active) _this.render();
-    });
+      // let the pan gesture support all directions.
+      h.get('pan').set({ direction: Hammer.DIRECTION_ALL });
 
-    // pan moves
-    h.on("panmove", function(e){
-      if (_this.mode=='teaching') return false;
-      // add current point
-      var d = _this.getGestureData(e);
-      _this.humanCreature.addPoint(d);
-      _this.chord.listenForPluck([_this.humanCreature]);
-    });
+      // pan starts
+      h.on("panstart", function(e){
+        // if (_this.mode=='teaching') return false;
+        _this.mode = 'human';
+        var d = _this.getGestureData(e);
+        _this.humanCreature.setPoints([d]);
+        // invoke render if not already animating
+        if (!_this.active) _this.render();
+      });
 
-    // pan ends
-    h.on("panend", function(e){
-      if (_this.mode=='teaching') return false;
-      _this.onStrokeEnd();
-    });
+      // pan moves
+      h.on("panmove", function(e){
+        if (_this.mode=='teaching') return false;
+        // add current point
+        var d = _this.getGestureData(e);
+        _this.humanCreature.addPoint(d);
+        _this.chord.listenForPluck([_this.humanCreature]);
+      });
 
-    // human finished teaching
-    $.subscribe('creature.teach.finished', function(e, data){
-      _this.mode = 'machine';
-    });
+      // pan ends
+      h.on("panend", function(e){
+        if (_this.mode=='teaching') return false;
+        _this.onStrokeEnd();
+      });
+
+      // human finished teaching
+      $.subscribe('creature.teach.finished', function(e, data){
+        _this.mode = 'machine';
+      });
+    }
 
     $.subscribe('training.loaded', function(e, d){
       _this.render();
@@ -1105,6 +1118,13 @@ var Environment = (function() {
     var _this = this;
 
     this.clearCanvas();
+
+    if (this.opt.mode=='analyzer') {
+      // render analyzer
+      this.analyzer.render();
+      requestAnimationFrame(this.render.bind(this));
+      return;
+    }
 
     // Render machine creatures
     if (this.mode == 'machine') {
@@ -1333,7 +1353,7 @@ var Analyzer = (function() {
     this.activationDate = new Date();
 
     _.each(distances, function(d, i){
-      weights[d.index] = (1-d.value) / Math.pow(2, i);
+      weights[d.index] = (1-d.value) / Math.pow(1.5, i);
     });
 
     _.each(this.nodes, function(node, i){

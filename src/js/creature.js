@@ -73,6 +73,7 @@ var Creature = (function() {
     });
 
     this.points = _.map(gPoints, _.clone);
+    this.generateTime = new Date();
   };
 
   Creature.prototype.getLastLine = function(){
@@ -107,7 +108,14 @@ var Creature = (function() {
   };
 
   Creature.prototype.isActive = function(){
-    return this.points.length || this.isTeaching;
+    if (this.points.length || this.isTeaching) return true;
+
+    if (this.generateTime) {
+      var now = new Date();
+      if ((now - this.generateTime) < (this.opt.strokeMs + this.opt.restMs)) return true;
+    }
+
+    return false;
   };
 
   Creature.prototype.learn = function(points){

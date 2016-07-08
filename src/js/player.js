@@ -64,7 +64,7 @@ var Player = (function() {
 
   Player.prototype.play = function(key, volume){
     var s = this.sounds[key];
-    if (s) {
+    if (s && volume > this.opt.minVolume) {
       s.setVolume(volume*100);
       s.play();
     }

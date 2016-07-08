@@ -5,13 +5,14 @@ var CONFIG = {
   maxVelocity: 4, // max velocity of user's gesture in px/s
   apiUrl: '/api',
   trainingUrl: 'api/paths',
+  mode: 'standard',
 
   analyzer: {
     nodeCount: 9,
     perRow: 3,
     width: 0.15,
     position: [0.575, 1],
-    restAfter: 4000,
+    restAfter: 5000,
     node: {
       active: {
         widthRange: [0.2, 0.8],
@@ -44,8 +45,7 @@ var CONFIG = {
     strokeColor: [255, 255, 255], // white
     strokeWidth: 20,
     strokeMs: 2000,
-    transitionMs: 1000,
-    transitionZ: 0.5,
+    restMs: 3000,
     teachMs: 4000,
     strokeColorTransition: [103, 95, 95], // gray
     strokeColorRangeTeach: [[248, 82, 82], [148, 255, 111]], // red -> green
@@ -56,6 +56,7 @@ var CONFIG = {
 
   player: {
     instrumentVolume: 0.5,
+    minVolume: 0.05,
     instruments: [
       'audio/amarantine_0-023_c3.mp3',
       'audio/amarantine_0-026_as2.mp3',

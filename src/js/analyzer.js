@@ -25,7 +25,7 @@ var Analyzer = (function() {
     this.activationDate = new Date();
 
     _.each(distances, function(d, i){
-      weights[d.index] = (1-d.value) / Math.pow(2, i);
+      weights[d.index] = (1-d.value) / Math.pow(1.5, i);
     });
 
     _.each(this.nodes, function(node, i){

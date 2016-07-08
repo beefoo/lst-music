@@ -14,7 +14,9 @@ var Environment = (function() {
       this.loadCreatures();
       this.loadChord();
     }
-    this.loadAnalyzer();
+    if (this.opt.mode=='analyzer') {
+      this.loadAnalyzer();
+    }
     this.loadListeners();
   };
 
@@ -51,7 +53,7 @@ var Environment = (function() {
     //     break;
     //   }
     // }
-    return this.mode=='machine' || this.analyzer.isActive() || this.humanCreature.isActive() || this.chord.isActive();
+    return this.mode=='machine' || this.analyzer && this.analyzer.isActive() || this.humanCreature.isActive() || this.chord.isActive();
   };
 
   Environment.prototype.loadAnalyzer = function(){
@@ -132,6 +134,14 @@ var Environment = (function() {
       $.subscribe('creature.teach.finished', function(e, data){
         _this.mode = 'machine';
       });
+
+      // store points in local storage
+      $.subscribe('user.create.points', function(e, d){
+        localStorage.setItem('create.points', JSON.stringify(d.points));
+      });
+      $.subscribe('machine.create.points', function(e, d){
+        localStorage.setItem('create.points', JSON.stringify(d.points));
+      });
     }
 
     $.subscribe('training.loaded', function(e, d){
@@ -196,7 +206,7 @@ var Environment = (function() {
     this.chord.render();
 
     // render analyzer
-    this.analyzer.render();
+    // this.analyzer.render();
 
     // only render if there's something to animate
     if (this.isActive()) {

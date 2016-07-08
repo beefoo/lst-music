@@ -118,7 +118,7 @@ var Cord = (function() {
 
     this.x0 = (w - l) * 0.5;
     this.x1 = this.x0 + l;
-    this.y0 = cordHeight * this.opt.index + cordHeight * this.opt.count * (1/3);
+    this.y0 = cordHeight * this.opt.index + cordHeight * this.opt.count * 0.5;
     this.y1 = this.y0;
     this.line = [{x: this.x0, y: this.y0}, {x: this.x1, y: this.y1}];
 

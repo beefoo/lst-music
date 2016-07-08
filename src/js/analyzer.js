@@ -107,6 +107,13 @@ var Analyzer = (function() {
     $.subscribe('machine.create.points', function(e, d){
       _this.activate(d.points);
     });
+
+    $(window).on('storage', function(e){
+      var event = e.originalEvent;
+      if (event.key == 'create.points') {
+        _this.activate(JSON.parse(localStorage.getItem('create.points')));
+      }
+    });
   };
 
   Analyzer.prototype.loadNodes = function(){

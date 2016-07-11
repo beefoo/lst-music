@@ -20,8 +20,8 @@ var Node = (function() {
     this.resize();
   };
 
-  Node.prototype.activate = function(value){
-    this.mode = 'active';
+  Node.prototype.activate = function(value, mode){
+    this.mode = mode || 'active';
     this.startPower = this.power;
     this.targetPower = value;
     this.transitionStart = new Date();
@@ -129,8 +129,7 @@ var Node = (function() {
   };
 
   Node.prototype.rest = function(){
-    this.mode = 'resting';
-    this.setPower(0);
+    this.activate(0, 'resting');
   };
 
   Node.prototype.setPower = function(value){

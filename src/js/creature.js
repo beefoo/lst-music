@@ -13,7 +13,8 @@ var Creature = (function() {
     this.network = false;
     this.trained = false;
     if (this.opt.type=='machine' && !this.opt.fake) {
-      this.network = new synaptic.Architect.LSTM(4,this.opt.network.hiddenLayers,this.opt.network.hiddenLayers,this.opt.network.hiddenLayers,4);
+      var layers = this.opt.network.hiddenLayers;
+      this.network = new synaptic.Architect.LSTM(4,layers,layers,layers,4);
     }
     this.loadListeners();
   };

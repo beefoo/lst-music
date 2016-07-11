@@ -16,7 +16,7 @@ var CONFIG = {
     node: {
       active: {
         widthRange: [0.2, 0.8],
-        colorRange: [[168, 163, 133], [255, 255, 255]],
+        colorRange: [[242, 234, 193], [247, 209, 13]],
         oscRange: [0.0005, 0.001]
       },
       resting: {
@@ -32,7 +32,7 @@ var CONFIG = {
     cord: {
       height: 0.1,
       curveRatio: 0.45,
-      strokeStyle: '#847b58',
+      strokeStyle: '#6b5e6b',
       lineWidth: 5,
       ampMin: 0.1, // min oscillation height in px
       oscRange: [0.005, 0.03], // frequency / oscillation speed; lower means slower
@@ -55,18 +55,18 @@ var CONFIG = {
   },
 
   player: {
-    instrumentVolume: 0.5,
+    instrumentVolume: 0.4,
     minVolume: 0.05,
     instruments: [
-      'audio/amarantine_0-023_c3.mp3',
-      'audio/amarantine_0-026_as2.mp3',
-      'audio/amarantine_0-034_ds.mp3',
-      'audio/eternal_main_guitar_1.mp3',
-      'audio/good_day_synth_a1.mp3',
-      'audio/good_day_synth_d2.mp3',
-      'audio/good_day_synth_f1.mp3',
-      'audio/good_day_synth_g1.mp3',
-      'audio/superman_vocal_01.mp3'
+      'audio/trio1_0-00-545_mallet.mp3',
+      'audio/trio2_0-35-930_tom.mp3',
+      'audio/living4_0-04-144_bell.mp3',
+      'audio/living4_0-13-813_ding.mp3',
+      'audio/living2_0-23-718_bebop.mp3',
+      'audio/living3_2-22-109_metal.mp3',
+      'audio/imaginary_0-28-392_trill.mp3',
+      'audio/imaginary_0-31-868_tin.mp3',
+      'audio/living1_0-19-214_ding.mp3'
     ]
   }
 };

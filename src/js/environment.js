@@ -90,7 +90,7 @@ var Environment = (function() {
     _(this.opt.creatureCount).times(function(i){
       creatureOpt.type = 'machine';
       creatureOpt.index = i;
-      creatureOpt.strokeColor = [255, 234, 79];
+      creatureOpt.strokeColor = [247, 209, 13];
       _this.creatures.push(new Creature(creatureOpt));
     });
   };

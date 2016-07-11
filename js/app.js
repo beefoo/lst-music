@@ -1047,7 +1047,7 @@ var Environment = (function() {
     _(this.opt.creatureCount).times(function(i){
       creatureOpt.type = 'machine';
       creatureOpt.index = i;
-      creatureOpt.strokeColor = [255, 234, 79];
+      creatureOpt.strokeColor = [247, 209, 13];
       _this.creatures.push(new Creature(creatureOpt));
     });
   };
@@ -1200,17 +1200,24 @@ var Node = (function() {
   Node.prototype.init = function(){
     this.ctx = this.opt.ctx;
     this.mode = 'resting';
-    this.oscTimeStart = new Date();
-    this.oscTimeStart = this.oscTimeStart.getTime() - _.random(0, 2000);
     this.direction = false;
+    this.transitionMs = this.opt.transitionMs;
     this.initValue();
     this.setPower(0);
+
+    var now = new Date();
+    this.phaseStart = now.getTime() + _.random(0, 2000);
+    this.phaseEnd = this.phaseStart + this.phase;
+
     this.resize();
   };
 
   Node.prototype.activate = function(value){
     this.mode = 'active';
-    this.setPower(value);
+    this.startPower = this.power;
+    this.targetPower = value;
+    this.transitionStart = new Date();
+    // this.setPower(value);
   };
 
   Node.prototype.addValue = function(v){
@@ -1255,49 +1262,40 @@ var Node = (function() {
     var props = this.opt[this.mode];
     var widths = props.widthRange;
     var colors = props.colorRange;
-    var oscs = props.oscRange;
+    var phases = props.phaseRange;
 
-    this.freq = UTIL.lerp(oscs[0], oscs[1], this.power);
+    this.phase = UTIL.lerp(phases[0], phases[1], this.power);
     this.widthRange = [widths[0], widths[1] * this.power];
     this.colorRange = [colors[0], UTIL.lerpColor(colors[0], colors[1], this.power)];
   };
 
-  Node.prototype.play = function(amount){
-    if (this.prevAmount) {
-      if (this.direction===false) {
-        this.direction = this.prevAmount > amount ? -1 : 1;
-
-      } else {
-        var goingDown = this.prevAmount > amount && this.direction > 0;
-        var goingUp = this.prevAmount < amount && this.direction < 0;
-        // changing directions
-        if (goingDown || goingUp) {
-          this.direction *= -1;
-          // play if power and reached peak
-          if (goingDown && this.power > 0) {
-            $.publish('instrument.play', [this.opt.index, this.power]);
-          }
-        }
-      }
-
+  Node.prototype.play = function(){
+    if (this.power > 0) {
+      $.publish('instrument.play', [this.opt.index, this.power]);
     }
-    this.prevAmount = amount;
   };
 
   Node.prototype.render = function(){
+    this.transition();
+
     var ctx = this.ctx;
     var pos = this.pos;
 
-    var t = new Date();
-    var td = (t - this.oscTimeStart) * this.freq;
-    var a = 2 * Math.PI * td;
-    var amount = UTIL.norm(Math.cos(a), -1, 1);
+    var now = new Date();
+    var progress = UTIL.norm(now.getTime(), this.phaseStart, this.phaseEnd);
+    var a = progress * Math.PI;
+    var amount = Math.sin(a);
 
     var color = UTIL.lerpColor(this.colorRange[0], this.colorRange[1], amount);
     var radius = UTIL.lerp(this.widthRange[0], this.widthRange[1], amount) * pos.r;
 
-    // check for sound
-    this.play(amount);
+    // reached end of phase; increment
+    if (progress >= 1) {
+      this.phaseStart = this.phaseEnd;
+      this.phaseEnd += this.phase;
+      // play sound
+      this.play();
+    }
 
     ctx.beginPath();
     ctx.fillStyle = 'rgb('+color.join(',')+')';
@@ -1330,6 +1328,25 @@ var Node = (function() {
   Node.prototype.setPower = function(value){
     this.power = value;
     this.onUpdate();
+  };
+
+  Node.prototype.transition = function(){
+    if (!this.transitionStart) return false;
+
+    var now = new Date();
+
+    // transition finished
+    var progressMs = now - this.transitionStart;
+    if (progressMs >= this.transitionMs) {
+      this.setPower(this.targetPower);
+      this.transitionStart = false;
+      return false;
+    }
+
+    // transitioning
+    var progress = progressMs / this.transitionMs;
+    var power = UTIL.lerp(this.startPower, this.targetPower, progress);
+    this.setPower(power);
   };
 
   return Node;

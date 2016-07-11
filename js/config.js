@@ -14,15 +14,16 @@ var CONFIG = {
     position: [0.575, 1],
     restAfter: 5000,
     node: {
+      transitionMs: 600,
       active: {
         widthRange: [0.2, 0.8],
-        colorRange: [[242, 234, 193], [247, 209, 13]],
-        oscRange: [0.0005, 0.001]
+        colorRange: [[145, 134, 81], [247, 209, 13]],
+        phaseRange: [2000, 500]
       },
       resting: {
         widthRange: [0.3, 0.5],
         colorRange: [[56, 55, 50], [101, 100, 92]],
-        oscRange: [0.0003, 0.0005]
+        phaseRange: [4000, 2000]
       }
     }
   },

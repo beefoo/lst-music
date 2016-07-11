@@ -50,8 +50,9 @@ var CONFIG = {
     teachMs: 4000,
     strokeColorTransition: [103, 95, 95], // gray
     strokeColorRangeTeach: [[248, 82, 82], [148, 255, 111]], // red -> green
+    fake: true,
     network: {
-
+      hiddenLayers: 6
     }
   },
 

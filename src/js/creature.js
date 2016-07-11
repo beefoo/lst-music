@@ -11,10 +11,10 @@ var Creature = (function() {
     this.points = [];
     this.training = [];
     this.network = false;
-    if (this.opt.type=='machine') {
-      this.network = {};
+    this.trained = false;
+    if (this.opt.type=='machine' && !this.opt.fake) {
+      this.network = new synaptic.Architect.LSTM(4,this.opt.network.hiddenLayers,this.opt.network.hiddenLayers,this.opt.network.hiddenLayers,4);
     }
-
     this.loadListeners();
   };
 
@@ -40,6 +40,59 @@ var Creature = (function() {
   };
 
   Creature.prototype.generate = function(){
+    if (this.opt.fake) {
+      this.generateFake();
+      return true;
+    }
+    if (this.generating || !this.trained) return false;
+    this.generating = true;
+
+    var w = this.ctx.canvas.width;
+    var h = this.ctx.canvas.height;
+    var maxV = this.opt.maxVelocity;
+    var gPoints = [];
+    var t = 0;
+    var input = [Math.random(), Math.random(), Math.random(), Math.random() / 4];
+    var gPrev = false;
+    var now = new Date();
+    var path = this.training[_.random(0, this.training.length-1)];
+    var strokeMs = this.opt.strokeMs;
+
+    gPoints.push({
+      x: input[0] * w,
+      y: input[1] * h,
+      z: 0,
+      a: (input[2] - 0.5) * 360,
+      v: input[3],
+      t: now.getTime()
+    });
+    var i = 0;
+    while(t < strokeMs && i < 1000) {
+      var output = this.network.activate(input);
+      // console.log(output)
+      var d = UTIL.dist(input[0] * w, input[1] * h, output[0] * w, output[1] * h);
+      var pxs = UTIL.lerp(0.01, maxV, output[3]);
+      var s = (1/pxs) * d;
+      t += s;
+      // console.log(d, pxs)
+      gPoints.push({
+        x: output[0] * w,
+        y: output[1] * h,
+        z: 0,
+        a: (output[2] - 0.5) * 360,
+        v: output[3],
+        t: new Date(now.getTime() + t)
+      });
+      input = output.slice(0);
+      i++;
+    }
+
+    this.points = _.map(gPoints, _.clone);
+    this.generateTime = new Date();
+    this.generating = false;
+  };
+
+  Creature.prototype.generateFake = function(){
     if (this.training.length <= 0) return false;
 
     var w = this.ctx.canvas.width;
@@ -120,22 +173,20 @@ var Creature = (function() {
 
   Creature.prototype.learn = function(points){
     var nPoints = this.getPointsNormal(points);
-    var prev = {x: 0, y: 0, a: 0, v: 0};
-    var weights = [];
 
-    this.addTrainingPoints(nPoints);
+    if (this.opt.fake) {
+      this.addTrainingPoints(nPoints);
+      return true;
+    }
+
+    var network = this.network;
 
     _.each(nPoints, function(p, i){
-      var input = [prev.x, prev.y, prev.a, prev.v];
-      var expected = [p.x, p.y, p.a, p.v];
-      var output = [Math.random(), Math.random(), Math.random(), Math.random()];
-      var diff = [];
-      _.each(expected, function(a, j){
-        diff.push(Math.abs(a - output[j]));
-      });
-      var weight = UTIL.mean(diff);
-      weights.push(weight);
-      prev = nPoints[i];
+      if (i > 0) {
+        var prev = nPoints[i-1];
+        network.activate([prev.x, prev.y, prev.a, prev.v]);
+        network.propagate(0.3, [p.x, p.y, p.a, p.v]);
+      }
     });
 
     return weights;
@@ -168,9 +219,34 @@ var Creature = (function() {
 
     if (this.opt.type=='machine') {
       $.subscribe('training.loaded', function(e, d){
-        _this.training = _.map(d.data, _.clone);
+        _this.loadTraining(_.map(d.data, _.clone));
       });
     }
+  };
+
+  Creature.prototype.loadTraining = function(paths){
+    if (this.opt.fake) {
+      this.training = paths;
+      this.trained = true;
+      return true;
+    }
+
+    var trainingSet = [];
+    _.each(paths, function(path){
+      _.each(path, function(point, i) {
+        if (i > 0) {
+          var prev = path[i-1];
+          trainingSet.push({
+            input: [prev.x, prev.y, prev.a, prev.v],
+            output: [point.x, point.y, point.a, point.v]
+          });
+        }
+      });
+
+    });
+    var trainer = new synaptic.Trainer(this.network);
+    trainer.train(trainingSet);
+    this.trained = true;
   };
 
   Creature.prototype.onTeachingEnd = function(){

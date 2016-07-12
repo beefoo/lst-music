@@ -61,7 +61,7 @@ var CONFIG = {
     minVolume: 0.05,
     instruments: [
       'audio/trio1_0-00-545_mallet.mp3',
-      'audio/trio2_0-35-930_tom.mp3',
+      'audio/living3_2-22-477_metal.mp3',
       'audio/living4_0-04-144_bell.mp3',
       'audio/living4_0-13-813_ding.mp3',
       'audio/living2_0-23-718_bebop.mp3',

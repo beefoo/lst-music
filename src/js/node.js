@@ -10,7 +10,7 @@ var Node = (function() {
     this.mode = 'resting';
     this.direction = false;
     this.transitionMs = this.opt.transitionMs;
-    this.initValue();
+    this.initValue(this.opt.values);
     this.setPower(0);
 
     var now = new Date();
@@ -50,16 +50,18 @@ var Node = (function() {
     return Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)+(z2-z1)*(z2-z1));
   };
 
-  Node.prototype.initValue = function(){
-    // var i = this.opt.index;
-    // var value = [1, 1, 1];
-    // var corner = i % 8;
-    // if (corner % 2 == 0) value[0] = 0;
-    // else value[1] = 0;
-    // if (corner < 4) value[2] = 0;
+  Node.prototype.initValue = function(values){
+    if (values && values.length) {
+      var first = _.map(values, function(v){ return v[0]; });
+      var second = _.map(values, function(v){ return v[1]; });
+      var third = _.map(values, function(v){ return v[2]; });
+      this.value = [UTIL.mean(first), UTIL.mean(second), UTIL.mean(third)];
+      this.count = values.length;
 
-    this.value = [Math.random(), Math.random(), Math.random()];
-    this.count = 1;
+    } else {
+      this.value = [Math.random(), Math.random(), Math.random()];
+      this.count = 1;
+    }
   };
 
   Node.prototype.isActive = function(){

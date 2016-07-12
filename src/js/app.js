@@ -6,6 +6,7 @@
 //=include vendor/hammer.min.js
 //=include vendor/jquery.hammer.js
 //=include vendor/soundmanager2-nodebug-jsmin.js
+//=include vendor/clusterfck-0.1.js
 //=include vendor/synaptic.js
 //=include util.js
 //=include trainer.js

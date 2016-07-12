@@ -10,7 +10,7 @@ var Analyzer = (function() {
 
     // init canvas
     this.onUpdate();
-    this.loadNodes();
+    // this.loadNodes();
     this.loadListeners();
   };
 
@@ -35,9 +35,13 @@ var Analyzer = (function() {
 
   Analyzer.prototype.analyze = function(paths){
     var _this = this;
-    _.each(paths, function(path){
-      _this.analyzePath(path);
+
+    var nPaths = _.map(paths, function(path){
+      return _this.getValue(path);
     });
+
+    var clusters = clusterfck.kmeans(nPaths, this.opt.nodeCount);
+    this.loadNodes(clusters);
   };
 
   Analyzer.prototype.analyzePath = function(path){
@@ -116,7 +120,7 @@ var Analyzer = (function() {
     });
   };
 
-  Analyzer.prototype.loadNodes = function(){
+  Analyzer.prototype.loadNodes = function(clusters){
     var _this = this;
     var nodeCount = this.opt.nodeCount;
     var perRow = this.opt.perRow;
@@ -124,9 +128,13 @@ var Analyzer = (function() {
     var position = _.clone(this.pos);
     var ctx = this.ctx;
 
+    // console.log(clusters)
+
     this.nodes = [];
     _(nodeCount).times(function(i){
-      _this.nodes.push(new Node(_.extend({index: i, ctx: ctx, perRow: perRow, parent: position}, nodeOpt)));
+      var values = [];
+      if (clusters[i]) values = clusters[i].slice(0);
+      _this.nodes.push(new Node(_.extend({index: i, ctx: ctx, perRow: perRow, parent: position, values: values}, nodeOpt)));
     });
   };
 

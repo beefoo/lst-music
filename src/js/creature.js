@@ -9,14 +9,22 @@ var Creature = (function() {
     this.ctx = this.opt.ctx;
     this.isTeaching = false;
     this.points = [];
+    this.nodes = [];
     this.training = [];
     this.network = false;
     this.trained = false;
+    this.activeNode = false;
     if (this.opt.type=='machine' && !this.opt.fake) {
       var layers = this.opt.network.hiddenLayers;
       this.network = new synaptic.Architect.LSTM(4,layers,layers,layers,4);
     }
     this.loadListeners();
+  };
+
+  Creature.prototype.addNodeData = function(nodes){
+    if (!nodes.length) return false;
+
+    this.nodes = _.map(nodes, function(n, i){ return {index: i, value: n}; });
   };
 
   Creature.prototype.addPoint = function(p){
@@ -105,6 +113,20 @@ var Creature = (function() {
     var gPrev = false;
     var now = new Date();
     var path = this.training[_.random(0, this.training.length-1)];
+
+    // node has just been activated; make a stroke that is similar
+    if (this.activeNode !== false && this.nodes.length) {
+
+      var activeNode = this.activeNode;
+      var nodePaths = _.filter(this.nodes, function(node, i){ return node.value==activeNode; });
+      if (nodePaths.length) {
+        var randomPath = nodePaths[_.random(0, nodePaths.length-1)];
+        if (randomPath.index < this.training.length) {
+          path = this.training[randomPath.index];
+        }
+      }
+      this.activeNode = false;
+    }
 
     _.each(path, function(point) {
       var pxs = UTIL.lerp(0, maxV, point.v);
@@ -221,6 +243,20 @@ var Creature = (function() {
     if (this.opt.type=='machine') {
       $.subscribe('training.loaded', function(e, d){
         _this.loadTraining(_.map(d.data, _.clone));
+      });
+
+      $(window).on('storage', function(e){
+        var event = e.originalEvent;
+
+        if (event.key == 'node.activate') {
+          var n = JSON.parse(localStorage.getItem('node.activate'));
+          _this.activeNode = n.value;
+          // console.log('node.activate', _this.activeNode);
+
+        } else if (event.key == 'node.loaded') {
+          var d = JSON.parse(localStorage.getItem('node.loaded'));
+          _this.addNodeData(d.data);
+        }
       });
     }
   };

@@ -15,8 +15,8 @@ var Analyzer = (function() {
     this.loadListeners();
   };
 
-  Analyzer.prototype.activate = function(path){
-    var distances = this.analyzePath(path);
+  Analyzer.prototype.activate = function(path, isNew){
+    var distances = this.analyzePath(path, isNew);
     var len = distances.length;
     // var minD = _.min(distances);
     // var maxD = _.max(distances);
@@ -38,17 +38,33 @@ var Analyzer = (function() {
   Analyzer.prototype.analyze = function(paths){
     var _this = this;
 
-    // this.paths = _.map(paths, _.clone);
-
     var nPaths = _.map(paths, function(path){
       return _this.getValue(path);
     });
 
     var clusters = clusterfck.kmeans(nPaths, this.opt.nodeCount);
     this.loadNodes(clusters);
+
+    // save the cluster values
+    var path_clusters = _.map(paths, function(p, i){
+      return -1;
+    });
+
+    nPaths = _.map(nPaths, function(p, i){ return {index: i, value: p}; });
+    _.each(clusters, function(cluster, i){
+      _.each(cluster, function(path, j){
+        var match = _.find(nPaths, function(p){
+          return p.value[0]==path[0] && p.value[1]==path[1] && p.value[2]==path[2];
+        });
+        if (match) {
+          path_clusters[match.index] = i;
+        }
+      });
+    });
+    localStorage.setItem('node.loaded', JSON.stringify({d: new Date(), data: path_clusters}));
   };
 
-  Analyzer.prototype.analyzePath = function(path){
+  Analyzer.prototype.analyzePath = function(path, isNew){
     var nodes = this.nodes;
     var value = this.getValue(path);
     var minDistance = 1;
@@ -65,8 +81,11 @@ var Analyzer = (function() {
       distances.push(d);
     });
 
-    // add value to closest node
-    nodes[minNode].addValue(value);
+    if (isNew) {
+      // add value to closest node
+      nodes[minNode].addValue(value);
+      localStorage.setItem('node.activate', JSON.stringify({d: new Date(), value: minNode}));
+    }
 
     return distances;
   };
@@ -109,7 +128,7 @@ var Analyzer = (function() {
     });
 
     $.subscribe('user.create.points', function(e, d){
-      _this.activate(d.points);
+      _this.activate(d.points, true);
     });
 
     $.subscribe('machine.create.points', function(e, d){
@@ -118,8 +137,10 @@ var Analyzer = (function() {
 
     $(window).on('storage', function(e){
       var event = e.originalEvent;
-      if (event.key == 'create.points') {
-        _this.activate(JSON.parse(localStorage.getItem('create.points')));
+      if (event.key == 'user.create.points') {
+        _this.activate(JSON.parse(localStorage.getItem('user.create.points')), true);
+      } else if (event.key == 'machine.create.points') {
+        _this.activate(JSON.parse(localStorage.getItem('machine.create.points')));
       }
     });
   };

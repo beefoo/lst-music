@@ -4143,14 +4143,22 @@ var Creature = (function() {
     this.ctx = this.opt.ctx;
     this.isTeaching = false;
     this.points = [];
+    this.nodes = [];
     this.training = [];
     this.network = false;
     this.trained = false;
+    this.activeNode = false;
     if (this.opt.type=='machine' && !this.opt.fake) {
       var layers = this.opt.network.hiddenLayers;
       this.network = new synaptic.Architect.LSTM(4,layers,layers,layers,4);
     }
     this.loadListeners();
+  };
+
+  Creature.prototype.addNodeData = function(nodes){
+    if (!nodes.length) return false;
+
+    this.nodes = _.map(nodes, function(n, i){ return {index: i, value: n}; });
   };
 
   Creature.prototype.addPoint = function(p){
@@ -4239,6 +4247,20 @@ var Creature = (function() {
     var gPrev = false;
     var now = new Date();
     var path = this.training[_.random(0, this.training.length-1)];
+
+    // node has just been activated; make a stroke that is similar
+    if (this.activeNode !== false && this.nodes.length) {
+
+      var activeNode = this.activeNode;
+      var nodePaths = _.filter(this.nodes, function(node, i){ return node.value==activeNode; });
+      if (nodePaths.length) {
+        var randomPath = nodePaths[_.random(0, nodePaths.length-1)];
+        if (randomPath.index < this.training.length) {
+          path = this.training[randomPath.index];
+        }
+      }
+      this.activeNode = false;
+    }
 
     _.each(path, function(point) {
       var pxs = UTIL.lerp(0, maxV, point.v);
@@ -4355,6 +4377,20 @@ var Creature = (function() {
     if (this.opt.type=='machine') {
       $.subscribe('training.loaded', function(e, d){
         _this.loadTraining(_.map(d.data, _.clone));
+      });
+
+      $(window).on('storage', function(e){
+        var event = e.originalEvent;
+
+        if (event.key == 'node.activate') {
+          var n = JSON.parse(localStorage.getItem('node.activate'));
+          _this.activeNode = n.value;
+          // console.log('node.activate', _this.activeNode);
+
+        } else if (event.key == 'node.loaded') {
+          var d = JSON.parse(localStorage.getItem('node.loaded'));
+          _this.addNodeData(d.data);
+        }
       });
     }
   };
@@ -4581,10 +4617,10 @@ var Environment = (function() {
 
       // store points in local storage
       $.subscribe('user.create.points', function(e, d){
-        localStorage.setItem('create.points', JSON.stringify(d.points));
+        localStorage.setItem('user.create.points', JSON.stringify(d.points));
       });
       $.subscribe('machine.create.points', function(e, d){
-        localStorage.setItem('create.points', JSON.stringify(d.points));
+        localStorage.setItem('machine.create.points', JSON.stringify(d.points));
       });
     }
 
@@ -4858,8 +4894,8 @@ var Analyzer = (function() {
     this.loadListeners();
   };
 
-  Analyzer.prototype.activate = function(path){
-    var distances = this.analyzePath(path);
+  Analyzer.prototype.activate = function(path, isNew){
+    var distances = this.analyzePath(path, isNew);
     var len = distances.length;
     // var minD = _.min(distances);
     // var maxD = _.max(distances);
@@ -4881,17 +4917,33 @@ var Analyzer = (function() {
   Analyzer.prototype.analyze = function(paths){
     var _this = this;
 
-    // this.paths = _.map(paths, _.clone);
-
     var nPaths = _.map(paths, function(path){
       return _this.getValue(path);
     });
 
     var clusters = clusterfck.kmeans(nPaths, this.opt.nodeCount);
     this.loadNodes(clusters);
+
+    // save the cluster values
+    var path_clusters = _.map(paths, function(p, i){
+      return -1;
+    });
+
+    nPaths = _.map(nPaths, function(p, i){ return {index: i, value: p}; });
+    _.each(clusters, function(cluster, i){
+      _.each(cluster, function(path, j){
+        var match = _.find(nPaths, function(p){
+          return p.value[0]==path[0] && p.value[1]==path[1] && p.value[2]==path[2];
+        });
+        if (match) {
+          path_clusters[match.index] = i;
+        }
+      });
+    });
+    localStorage.setItem('node.loaded', JSON.stringify({d: new Date(), data: path_clusters}));
   };
 
-  Analyzer.prototype.analyzePath = function(path){
+  Analyzer.prototype.analyzePath = function(path, isNew){
     var nodes = this.nodes;
     var value = this.getValue(path);
     var minDistance = 1;
@@ -4908,8 +4960,11 @@ var Analyzer = (function() {
       distances.push(d);
     });
 
-    // add value to closest node
-    nodes[minNode].addValue(value);
+    if (isNew) {
+      // add value to closest node
+      nodes[minNode].addValue(value);
+      localStorage.setItem('node.activate', JSON.stringify({d: new Date(), value: minNode}));
+    }
 
     return distances;
   };
@@ -4952,7 +5007,7 @@ var Analyzer = (function() {
     });
 
     $.subscribe('user.create.points', function(e, d){
-      _this.activate(d.points);
+      _this.activate(d.points, true);
     });
 
     $.subscribe('machine.create.points', function(e, d){
@@ -4961,8 +5016,10 @@ var Analyzer = (function() {
 
     $(window).on('storage', function(e){
       var event = e.originalEvent;
-      if (event.key == 'create.points') {
-        _this.activate(JSON.parse(localStorage.getItem('create.points')));
+      if (event.key == 'user.create.points') {
+        _this.activate(JSON.parse(localStorage.getItem('user.create.points')), true);
+      } else if (event.key == 'machine.create.points') {
+        _this.activate(JSON.parse(localStorage.getItem('machine.create.points')));
       }
     });
   };

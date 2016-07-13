@@ -137,10 +137,10 @@ var Environment = (function() {
 
       // store points in local storage
       $.subscribe('user.create.points', function(e, d){
-        localStorage.setItem('create.points', JSON.stringify(d.points));
+        localStorage.setItem('user.create.points', JSON.stringify(d.points));
       });
       $.subscribe('machine.create.points', function(e, d){
-        localStorage.setItem('create.points', JSON.stringify(d.points));
+        localStorage.setItem('machine.create.points', JSON.stringify(d.points));
       });
     }
 

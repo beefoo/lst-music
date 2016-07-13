@@ -64,6 +64,39 @@ html {
   }
 }
 
+#app.description {
+  overflow: auto;
+  > div {
+    padding: 1em;
+  }
+  .col {
+    float: left;
+    width: 50%;
+    font-size: 1.8em;
+    padding-top: 2em;
+    @include box-sizing();
+  }
+  p {
+    line-height: 1.8;
+    margin: 0;
+    padding: 0;
+  }
+  .more {
+    clear: both;
+    font-size: 1.4em;
+    letter-spacing: 0.01em;
+    padding: 1em 1.3em;
+
+    p {
+      margin-bottom: 1em;
+      color: #999;
+      strong {
+        color: #fff;
+      }
+    }
+  }
+}
+
 #debug {
   display: none;
   width: auto;

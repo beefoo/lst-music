@@ -7,6 +7,7 @@ var Analyzer = (function() {
 
   Analyzer.prototype.init = function(){
     this.ctx = this.opt.ctx;
+    this.paths = [];
 
     // init canvas
     this.onUpdate();
@@ -17,9 +18,10 @@ var Analyzer = (function() {
   Analyzer.prototype.activate = function(path){
     var distances = this.analyzePath(path);
     var len = distances.length;
-    var minD = _.min(distances);
-    var maxD = _.max(distances);
-    distances = _.map(distances, function(d, i){ return {index: i, value: UTIL.norm(d, minD, maxD)}; });
+    // var minD = _.min(distances);
+    // var maxD = _.max(distances);
+    // distances = _.map(distances, function(d, i){ return {index: i, value: UTIL.norm(d, minD, maxD)}; });
+    distances = _.map(distances, function(d, i){ return {index: i, value: d}; });
     distances = _.sortBy(distances, function(d){ return d.value; });
     var weights = new Array(len);
     this.activationDate = new Date();
@@ -35,6 +37,8 @@ var Analyzer = (function() {
 
   Analyzer.prototype.analyze = function(paths){
     var _this = this;
+
+    // this.paths = _.map(paths, _.clone);
 
     var nPaths = _.map(paths, function(path){
       return _this.getValue(path);

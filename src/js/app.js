@@ -9,7 +9,6 @@
 //=include vendor/clusterfck-0.1.js
 //=include vendor/synaptic.js
 //=include util.js
-//=include trainer.js
 //=include player.js
 //=include cord.js
 //=include chord.js
@@ -17,4 +16,5 @@
 //=include environment.js
 //=include node.js
 //=include analyzer.js
+//=include trainer.js
 //=include debug.js

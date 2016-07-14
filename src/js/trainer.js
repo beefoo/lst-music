@@ -14,7 +14,7 @@ var Trainer = (function() {
   };
 
   Trainer.prototype.initFake = function(){
-    _this.parseData(TRAINING);
+    this.parseData(TRAINING);
   };
 
   Trainer.prototype.addPoints = function(points){

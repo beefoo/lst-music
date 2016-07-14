@@ -1,6 +1,6 @@
 var CONFIG = {
   debug: true,
-  trainer: true,
+  trainer: false,
   creatureCount: 1,
   maxVelocity: 4, // max velocity of user's gesture in px/s
   apiUrl: '/api',
@@ -51,6 +51,7 @@ var CONFIG = {
     strokeColorTransition: [103, 95, 95], // gray
     strokeColorRangeTeach: [[248, 82, 82], [148, 255, 111]], // red -> green
     fake: true,
+    rememberMax: 100,
     network: {
       hiddenLayers: 6
     }

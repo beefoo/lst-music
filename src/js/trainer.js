@@ -4,12 +4,17 @@ var Trainer = (function() {
     this.opt = _.extend({}, defaults, options);
 
     if (this.opt.trainer) this.init();
+    else this.initFake();
   }
 
   Trainer.prototype.init = function(){
     this.points = [];
     this.loadData();
     this.loadListeners();
+  };
+
+  Trainer.prototype.initFake = function(){
+    _this.parseData(TRAINING);
   };
 
   Trainer.prototype.addPoints = function(points){
@@ -44,14 +49,7 @@ var Trainer = (function() {
     var _this = this;
 
     $.getJSON(this.opt.trainingUrl, function(data) {
-      var paths = _.map(data.paths, function(path){
-        var p = path.data;
-        var columns = p.columns;
-        return _.map(p.rows, function(row){
-          return _.object(columns, row);
-        });
-      });
-      $.publish('training.loaded', {data: paths});
+      _this.parseData(data.paths);
     });
   };
 
@@ -61,6 +59,17 @@ var Trainer = (function() {
     $.subscribe('user.create.points', function(e, data){
       _this.addPoints(data.points);
     });
+  };
+
+  Trainer.prototype.parseData = function(data){
+    var paths = _.map(data, function(path){
+      var p = path.data;
+      var columns = p.columns;
+      return _.map(p.rows, function(row){
+        return _.object(columns, row);
+      });
+    });
+    $.publish('training.loaded', {data: paths});
   };
 
   return Trainer;

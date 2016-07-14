@@ -33,6 +33,9 @@ var Creature = (function() {
 
   Creature.prototype.addTrainingPoints = function(points){
     this.training.push(points);
+    var max = this.opt.rememberMax;
+    var len = this.training.length;
+    if (len > max) this.training = this.training.slice(len - max);
   };
 
   Creature.prototype.clearPoints = function(){

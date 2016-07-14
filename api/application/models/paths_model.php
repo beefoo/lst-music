@@ -9,7 +9,7 @@ class Paths_model extends CI_Model {
   }
 
   function getEntries($params=array()){
-    $params = array_merge(array('count'=>1000), $params);
+    $params = array_merge(array('count'=>100), $params);
     $query = $this->db->get('paths', $params['count']);
     return $this->parseEntries($query->result());
   }

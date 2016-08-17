@@ -4420,11 +4420,11 @@ var Environment = (function() {
     this.mode = 'machine';
 
     this.loadCanvas();
-    if (this.opt.mode=='standard') {
+    if (this.opt.mode=='standard' || this.opt.mode=='hybrid') {
       this.loadCreatures();
       this.loadChord();
     }
-    if (this.opt.mode=='analyzer') {
+    if (this.opt.mode=='analyzer' || this.opt.mode=='hybrid') {
       this.loadAnalyzer();
     }
     this.loadListeners();
@@ -4510,7 +4510,7 @@ var Environment = (function() {
     var ms = this.opt.strokeMs;
     var h = new Hammer(this.$canvas[0]);
 
-    if (this.opt.mode=='standard') {
+    if (this.opt.mode=='standard' || this.opt.mode=='hybrid') {
 
       // let the pan gesture support all directions.
       h.get('pan').set({ direction: Hammer.DIRECTION_ALL });
@@ -4582,11 +4582,14 @@ var Environment = (function() {
 
     this.clearCanvas();
 
-    if (this.opt.mode=='analyzer') {
+    if (this.opt.mode=='analyzer' || this.opt.mode=='hybrid') {
       // render analyzer
       this.analyzer.render();
-      requestAnimationFrame(this.render.bind(this));
-      return;
+
+      if (this.opt.mode=='analyzer') {
+        requestAnimationFrame(this.render.bind(this));
+        return;
+      }
     }
 
     // Render machine creatures

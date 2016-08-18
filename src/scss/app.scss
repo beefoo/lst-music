@@ -32,7 +32,7 @@ a {
   position: absolute;
   top: 20px;
   right: 20px;
-  bottom: 20px;
+  bottom: 100px;
   left: 20px;
   overflow: hidden;
 
@@ -106,17 +106,17 @@ a {
 .modal-link {
   position: fixed;
   z-index: 100;
-  top: 10px;
+  top: 30px;
 }
 .logo {
-  left: 10px;
+  left: 30px;
   img {
     max-width: 300px;
     height: auto;
   }
 }
 .modal-link {
-  right: 20px;
+  right: 30px;
   height: 40px;
   line-height: 40px;
   display: block;

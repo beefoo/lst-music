@@ -4558,6 +4558,17 @@ var Environment = (function() {
       _this.render();
     });
 
+    $('.modal-close').on('click', function(e){
+      e.preventDefault();
+      $('.modal').removeClass('active');
+    });
+
+    $('.modal-link').on('click', function(e){
+      e.preventDefault();
+      var href = $(this).attr('href');
+      $(href).addClass('active');
+    });
+
     // window is resized
     $(window).on("resize", function(){ _this.resize(); });
   };
